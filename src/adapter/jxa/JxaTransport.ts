@@ -621,6 +621,9 @@ export class JxaTransport implements OmniFocusAdapter {
         ...(patch.deferDate !== undefined ? { deferDate: patch.deferDate } : {}),
         ...(patch.dueDate !== undefined ? { dueDate: patch.dueDate } : {}),
         ...(patch.status !== undefined ? { status: patch.status } : {}),
+        ...(patch.completionCriterion !== undefined
+          ? { completionCriterion: patch.completionCriterion }
+          : {}),
       },
       { ...this.runOpts, scriptName: "project_update" },
     );

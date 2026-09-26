@@ -10,7 +10,7 @@
  * Args (argv[0] JSON): { id: string, name?: string, note?: string|null,
  *   noteHtml?: string|null, status?: string, folderId?: string|null,
  *   deferDate?: string|null, dueDate?: string|null, flagged?: boolean,
- *   estimatedMinutes?: number|null }
+ *   estimatedMinutes?: number|null, completionCriterion?: "parallel"|"sequential"|"singleActions" }
  * Returns JSON: { project: Project }
  *
  * @see src/adapter/jxa/JxaTransport.ts — caller
@@ -33,6 +33,29 @@ function run(argv) {
     "Project",
     args.id,
   );
+
+  if (args.completionCriterion !== undefined) {
+    if (!["parallel", "sequential", "singleActions"].includes(args.completionCriterion)) {
+      throw new Error("ValidationError: unsupported completionCriterion");
+    }
+    const singleActions = args.completionCriterion === "singleActions";
+    const sequential = args.completionCriterion === "sequential";
+    // Clear the incompatible flag before enabling the requested project type.
+    if (singleActions) {
+      // @ts-expect-error JXA accepts property-setter form on sdef properties.
+      target.sequential = false;
+      // @ts-expect-error JXA accepts property-setter form on sdef properties.
+      target.singletonActionHolder = true;
+    } else {
+      // @ts-expect-error JXA accepts property-setter form on sdef properties.
+      target.singletonActionHolder = false;
+      // @ts-expect-error JXA accepts property-setter form on sdef properties.
+      target.sequential = sequential;
+    }
+    if (target.singletonActionHolder() !== singleActions || target.sequential() !== sequential) {
+      throw new Error("OF_UNSUPPORTED: requested project type was not applied");
+    }
+  }
 
   if (args.name !== undefined) target.name = args.name;
   if (args.note !== undefined) target.note = args.note ?? "";

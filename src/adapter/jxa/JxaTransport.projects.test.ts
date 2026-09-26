@@ -1,8 +1,8 @@
 /**
  * Unit tests for `JxaTransport` — project domain methods.
  *
- * All tests use a fake spawner that returns pre-shaped JSON, so no `osascript`
- * binary is required. Integration tests against a live OmniFocus instance are
+ * Tests use injected spawners, including sandboxed script execution, so no
+ * `osascript` binary is required. Integration tests against a live OmniFocus instance are
  * in JxaTransport.projects.integration.test.ts and gated behind
  * `OMNIFOCUS_INTEGRATION=1`.
  *
@@ -14,6 +14,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { FolderId, ProjectId } from "../../domain/ids.js";
 import { NotFound, ScriptError } from "../../errors/index.js";
 import { JxaTransport } from "./JxaTransport.js";
+import { fakeProject } from "./sandbox/fixtures.js";
+import { runJxaScriptInSandbox } from "./sandbox/index.js";
 import type { ScriptSpawner, SpawnResult } from "./scriptRunner.js";
 
 // ---------------------------------------------------------------------------
@@ -165,6 +167,50 @@ describe("JxaTransport — createProject", () => {
 // ---------------------------------------------------------------------------
 
 describe("JxaTransport — updateProject", () => {
+  it("forwards completionCriterion and applies native project-type transitions", async () => {
+    const native = { singletonActionHolder: true, sequential: false };
+    let ignoreWrites = false;
+    const project = fakeProject({ id: () => "proj_aaa" });
+    for (const key of ["singletonActionHolder", "sequential"] as const) {
+      Object.defineProperty(project, key, {
+        get: () => () => native[key],
+        set: (value: boolean) => {
+          if (!ignoreWrites) native[key] = value;
+        },
+      });
+    }
+    const spawner: ScriptSpawner = async (script, jsonArg) => ({
+      stdout: JSON.stringify(
+        runJxaScriptInSandbox(script, JSON.parse(jsonArg), { projects: [project] }),
+      ),
+      stderr: "",
+      exitCode: 0,
+      timedOut: false,
+    });
+    const t = new JxaTransport({ spawner });
+    for (const completionCriterion of [
+      "parallel",
+      "sequential",
+      "singleActions",
+      "sequential",
+    ] as const) {
+      await t.updateProject("proj_aaa" as ProjectId, { completionCriterion });
+      expect(native).toEqual({
+        singletonActionHolder: completionCriterion === "singleActions",
+        sequential: completionCriterion === "sequential",
+      });
+    }
+    await t.updateProject("proj_aaa" as ProjectId, { flagged: true });
+    expect(native).toEqual({ singletonActionHolder: false, sequential: true });
+    await expect(
+      t.updateProject("proj_aaa" as ProjectId, { completionCriterion: "invalid" as "parallel" }),
+    ).rejects.toThrow("unsupported completionCriterion");
+    ignoreWrites = true;
+    await expect(
+      t.updateProject("proj_aaa" as ProjectId, { completionCriterion: "parallel" }),
+    ).rejects.toThrow("OF_UNSUPPORTED: requested project type was not applied");
+  });
+
   it("resolves without error on success", async () => {
     const t = new JxaTransport({
       spawner: spawnerReturning({ project: { ...BASE_PROJECT, name: "Updated" } }),
