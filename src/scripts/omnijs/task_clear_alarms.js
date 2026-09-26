@@ -31,9 +31,11 @@
   const existing = Array.from(task.notifications);
   for (const n of existing) {
     try {
-      n.removeFromContainer();
-    } catch (_e) {
-      // Best-effort; continue
+      task.removeNotification(n);
+    } catch (e) {
+      return JSON.stringify({
+        error: { code: "REMOVE_FAILED", message: String(e) },
+      });
     }
   }
 

@@ -1,5 +1,9 @@
 /**
- * `task_set_alarms` MCP tool — atomically replace a task's alarm/notification set.
+ * `task_set_alarms` MCP tool — replace a task's alarm/notification set.
+ *
+ * This operation is not atomic: failure may leave partial changes, with no
+ * rollback. If removing an existing notification fails, replacement stops
+ * before adding any new notifications.
  *
  * Alarms are OmniFocus's per-task notifications: a relative offset from the
  * task's due or defer date, or an absolute fire time. This tool is full-replace:
@@ -32,7 +36,9 @@ import { ValidationError } from "../../errors/index.js";
 // ---------------------------------------------------------------------------
 
 export const TASK_SET_ALARMS_DESCRIPTION =
-  "Replace the alarm/notification set on an OmniFocus task atomically. " +
+  "Replace the alarm/notification set on an OmniFocus task. " +
+  "This operation is not atomic: failure may leave partial changes, with no rollback. " +
+  "If removing an existing notification fails, replacement stops before adding any new notifications. " +
   "Pass an array of alarms; this overwrites any existing alarms in full. " +
   "Each alarm is one of: " +
   "{kind:'due-relative', offsetSeconds:N} (positive = before due date, negative = after), " +

@@ -1,5 +1,9 @@
 /**
- * OmniJS: replace a task's alarm/notification set atomically.
+ * OmniJS: replace a task's alarm/notification set.
+ *
+ * This operation is not atomic: failure may leave partial changes, with no
+ * rollback. If removing an existing notification fails, replacement stops
+ * before adding any new notifications.
  *
  * Args injected as `globalThis.__args`: { taskId: string, alarms: TaskAlarm[] }
  *
@@ -47,10 +51,11 @@
   const existing = Array.from(task.notifications);
   for (const n of existing) {
     try {
-      n.removeFromContainer();
-    } catch (_e) {
-      // Continue best-effort; some notifications resist removal but the
-      // subsequent addNotification calls re-derive state from scratch.
+      task.removeNotification(n);
+    } catch (e) {
+      return JSON.stringify({
+        error: { code: "REMOVE_FAILED", message: String(e) },
+      });
     }
   }
 

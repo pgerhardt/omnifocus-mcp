@@ -633,7 +633,7 @@ export class OmniJsTransport implements OmniFocusAdapter {
   }
 
   // -- Task alarms ----------------------------------------------------------
-  // Wrap Task.notifications via OmniJS addNotification / removeFromContainer.
+  // Wrap Task.notifications via OmniJS addNotification / removeNotification.
   async setTaskAlarms(
     id: TaskId,
     alarms: import("../../domain/task.js").TaskAlarm[],
