@@ -843,6 +843,15 @@ describe("JXA sandbox — task_get", () => {
     expect(result.task.projectId).toBeNull();
   });
 
+  it("reports an actionable task as available", () => {
+    const result = runJxaScriptInSandbox<{ task: { available: boolean } }>(
+      taskGetScript,
+      { id: "task_available" },
+      { tasks: [fakeTask({ id: () => "task_available" })] },
+    );
+    expect(result.task.available).toBe(true);
+  });
+
   // #1071: buildRepetition must parse the OF 4.x `recurrence` RRULE +
   // `repetitionMethod` string. The old code called rr.method()/unit()/steps()
   // (undefined on OF 4.x) and the swallowing try/catch returned null for EVERY

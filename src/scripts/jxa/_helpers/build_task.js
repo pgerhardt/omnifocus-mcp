@@ -22,10 +22,7 @@
  *
  * @param {object} task — JXA Task specifier
  * @param {object} [options]
- * @param {boolean} [options.effectiveAvailability=false] — when true, use
- *   `task.effectivelyAvailable()` (accounts for parent state, defer dates,
- *   sequential blocks) instead of `task.available()`. The forecast and
- *   search consumers want this; the rest want raw availability.
+ * @param {boolean} [options.effectiveAvailability=false] — retained for compatibility; availability is always derived from effective JXA state.
  * @returns {object} canonical Task shape per `src/domain/task.ts`
  */
 // biome-ignore lint/correctness/noUnusedVariables: inlined into JXA consumers via @inline directive (ADR-0020).
@@ -159,21 +156,22 @@ function buildTask(task, options) {
   }
 
   let available = false;
-  try {
-    if (options.effectiveAvailability) {
-      // task_search, forecast_get: "actionable right now" semantic —
-      // accounts for parent state, defer dates, sequential blocks.
-      available = task.effectivelyAvailable ? task.effectivelyAvailable() : false;
-    } else {
-      available = task.available();
-    }
-  } catch (_e) {
-    /* OF 4.x: property access may not exist on all object types — default used */
-  }
-
   let blocked = false;
   try {
     blocked = task.blocked();
+    let effectivelyCompleted = completed;
+    let effectivelyDropped = dropped;
+    try {
+      effectivelyCompleted = task.effectivelyCompleted();
+    } catch (_e) {
+      /* fall back to local completion state */
+    }
+    try {
+      effectivelyDropped = task.effectivelyDropped();
+    } catch (_e) {
+      /* fall back to local dropped state */
+    }
+    available = !blocked && !effectivelyCompleted && !effectivelyDropped;
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
