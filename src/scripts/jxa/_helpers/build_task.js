@@ -150,7 +150,7 @@ function buildTask(task, options) {
 
   let completedByChildren = false;
   try {
-    completedByChildren = task.containsSingletonActions();
+    completedByChildren = task.completedByChildren();
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }

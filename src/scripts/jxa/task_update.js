@@ -67,11 +67,7 @@ function run(argv) {
   }
   if (args.sequential !== undefined) found.sequential = args.sequential;
   if (args.completedByChildren !== undefined) {
-    try {
-      found.containsSingletonActions = args.completedByChildren;
-    } catch (_e) {
-      /* OF 4.x: property access may not exist on all object types — default used */
-    }
+    found.completedByChildren = args.completedByChildren;
   }
 
   if (Object.hasOwn(args, "repetition")) {
