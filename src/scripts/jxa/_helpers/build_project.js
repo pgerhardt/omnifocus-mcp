@@ -87,6 +87,13 @@ function buildProject(proj) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
 
+  let floating = false;
+  try {
+    floating = proj.shouldUseFloatingTimeZone();
+  } catch (_e) {
+    /* Preserve the default when native state is unavailable. */
+  }
+
   let completedAt = null;
   try {
     const cd = proj.completionDate();
@@ -209,6 +216,8 @@ function buildProject(proj) {
     completionCriterion: completionCriterion,
     deferDate: deferDate,
     dueDate: dueDate,
+    deferDateFloating: floating,
+    dueDateFloating: floating,
     estimatedMinutes: estimatedMinutes,
     flagged: flagged,
     reviewIntervalDays: reviewIntervalDays,

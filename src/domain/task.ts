@@ -97,9 +97,6 @@ export interface Task {
    * When true, the defer time follows the user across time zones rather than
    * being re-interpreted as a fixed UTC instant. Omitted from responses when
    * false to keep payloads lean. See DESIGN.md §14 — floating time zones.
-   *
-   * Note: the JXA transport always returns false (JXA exposes only a
-   * document-level default, not per-task floating-TZ state).
    */
   deferDateFloating?: boolean;
   dueDate: IsoDateString | null;
