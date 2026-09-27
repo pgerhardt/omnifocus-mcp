@@ -23,10 +23,11 @@
  *
  * @param {object} proj — JXA Project specifier
  * @param {object|null} [properties] — optional native record already read by the caller
+ * @param {object|null} [relationships] — optional folder/tag records keyed by persistent project ID
  * @returns {object} canonical Project shape per `src/domain/project.ts`
  */
 // biome-ignore lint/correctness/noUnusedVariables: inlined into JXA consumers via @inline directive (ADR-0020).
-function buildProject(proj, properties) {
+function buildProject(proj, properties, relationships) {
   if (properties === undefined) {
     try {
       properties = proj.properties();
@@ -40,14 +41,16 @@ function buildProject(proj, properties) {
       ? properties[key]
       : proj[key]();
   }
+  const id = readScalar("id");
+  const relationship = relationships?.[id];
 
   // OmniFocus 4.x JXA quirk (same flavor as #673's containingProject):
   // `f.class()` throws "Can't convert types" on a real Folder specifier.
   // Treat the throw as "real folder", a successful return of "document"
   // as the only skip path.
-  let folderId = null;
+  let folderId = relationship ? relationship.folderId : null;
   try {
-    const f = proj.folder();
+    const f = relationship ? null : proj.folder();
     if (f) {
       let isDocument = false;
       try {
@@ -61,9 +64,9 @@ function buildProject(proj, properties) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
 
-  const tagIds = [];
+  const tagIds = relationship ? relationship.tagIds.slice() : [];
   try {
-    const tags = proj.tags();
+    const tags = relationship ? [] : proj.tags();
     for (let i = 0; i < tags.length; i++) {
       // Guard per-element: a single bad tag object must not abort the loop
       // and zero-out all tagIds, which would silently exclude this project
@@ -186,14 +189,14 @@ function buildProject(proj, properties) {
 
   let taskCount = 0;
   try {
-    taskCount = proj.numberOfTasks();
+    taskCount = readScalar("numberOfTasks");
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
 
   let completedTaskCount = 0;
   try {
-    completedTaskCount = proj.numberOfCompletedTasks();
+    completedTaskCount = readScalar("numberOfCompletedTasks");
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
@@ -221,7 +224,7 @@ function buildProject(proj, properties) {
   }
 
   return {
-    id: proj.id(),
+    id: id,
     name: readScalar("name"),
     note: note,
     noteHtml: null,

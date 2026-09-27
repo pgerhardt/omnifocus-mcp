@@ -37,6 +37,7 @@ function run(argv) {
 
   const result = [];
   const hasOwn = Object.prototype.hasOwnProperty;
+  let relationships;
   for (let i = 0; i < projects.length; i++) {
     let properties;
     if (args.status != null || args.flagged != null) {
@@ -60,7 +61,31 @@ function run(argv) {
           continue;
       }
     }
-    const built = buildProject(projects[i], properties);
+    if (relationships === undefined) {
+      relationships = null;
+      try {
+        // Read relationships once, only after a survivor. Join by ID, never collection order.
+        const rows = JSON.parse(
+          ofApp.evaluateJavascript(
+            "JSON.stringify(flattenedProjects.map(p => ({id: p.id.primaryKey, folderId: p.parentFolder ? p.parentFolder.id.primaryKey : null, tagIds: p.tags.map(t => t.id.primaryKey)})))",
+          ),
+        );
+        const byId = Object.create(null);
+        for (const row of rows) {
+          if (
+            typeof row.id === "string" &&
+            (row.folderId === null || typeof row.folderId === "string") &&
+            Array.isArray(row.tagIds) &&
+            row.tagIds.every((/** @type {unknown} */ id) => typeof id === "string")
+          )
+            byId[row.id] = row;
+        }
+        relationships = byId;
+      } catch (_e) {
+        /* Unavailable OmniJS or invalid records: retain the per-project getter path. */
+      }
+    }
+    const built = buildProject(projects[i], properties, relationships);
     if (args.status !== null && args.status !== undefined && built.status !== args.status) continue;
     if (args.flagged != null && built.flagged !== args.flagged) continue;
     result.push(built);

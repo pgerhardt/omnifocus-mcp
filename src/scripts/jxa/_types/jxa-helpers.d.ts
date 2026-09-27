@@ -66,7 +66,7 @@ declare function buildFolder(folder: unknown, options?: object): any;
  * Spliced via `// @inline _helpers/build_project.js`.
  */
 // biome-ignore lint/suspicious/noExplicitAny: see file header.
-declare function buildProject(proj: unknown, properties?: object | null): any;
+declare function buildProject(proj: unknown, properties?: object | null, relationships?: object | null): any;
 declare function normalizeStatus(raw: unknown): unknown;
 
 /**
