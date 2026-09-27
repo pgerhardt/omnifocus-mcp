@@ -20,7 +20,24 @@ function harness(inbox: ReturnType<typeof task>[]) {
   const notifications = [{ kind: "absolute", fireAt: "2027-01-01T12:00:00.000Z" }];
   const app = {
     defaultDocument: { inboxTasks: () => inbox },
-    evaluateJavascript: vi.fn(() => JSON.stringify(notifications)),
+    evaluateJavascript: vi.fn((source: string) =>
+      runInNewContext(source, {
+        Task: {
+          byIdentifier: (id: string) =>
+            inbox.some((t) => typeof t.id === "function" && t.id() === id)
+              ? {
+                  notifications: [
+                    {
+                      kind: "absolute",
+                      absoluteFireDate: new Date(notifications[0]?.fireAt ?? ""),
+                    },
+                  ],
+                }
+              : null,
+          Notification: { Kind: { Absolute: "absolute" } },
+        },
+      }),
+    ),
   };
   const spawner: ScriptSpawner = vi.fn(async (script, args) => ({
     stdout: runInNewContext(`${script}\nrun([args])`, { Application: () => app, args }),

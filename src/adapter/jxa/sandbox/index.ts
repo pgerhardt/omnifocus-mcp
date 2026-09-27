@@ -1,3 +1,4 @@
+import { runInNewContext } from "node:vm";
 import { ScriptError } from "../../../errors/index.js";
 
 /**
@@ -502,7 +503,11 @@ function buildFakeApp(document: ReturnType<typeof buildFakeDocument>, doc: Sandb
     // silently no-op on existing tasks (#716). We don't model the OmniJS
     // semantics — the call just must not throw.
     evaluateJavascript: (script: unknown) => {
-      if (typeof script === "string" && script.includes("task.notifications.map")) return "[]";
+      if (typeof script === "string" && script.includes("task.notifications.map")) {
+        return runInNewContext(script, {
+          Task: { byIdentifier: () => ({ notifications: [] }), Notification: { Kind: {} } },
+        });
+      }
       if (typeof script === "string" && script.includes("tag.added.toISOString()")) {
         return JSON.stringify({
           createdAt: "2020-01-02T03:04:05.000Z",
