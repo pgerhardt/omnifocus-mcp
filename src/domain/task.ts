@@ -61,8 +61,8 @@ export interface RepetitionRule {
  * - **`due-relative`** — fires `offsetSeconds` BEFORE the task's due date.
  *   Negative offsets fire AFTER the due date. Requires the task to have
  *   a `dueDate`; otherwise setting this kind raises `InvalidAlarmTarget`.
- * - **`defer-relative`** — same shape but anchored on `deferDate`.
- *   Requires the task to have a `deferDate`.
+ * - **`defer-relative`** — reserved shape; OmniJS rejects writes before
+ *   removing existing notifications because it cannot create this kind.
  * - **`absolute`** — fires at a fixed wall-clock instant `fireAt`
  *   (ISO-8601 with offset).
  *

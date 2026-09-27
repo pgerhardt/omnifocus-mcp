@@ -18,7 +18,7 @@
  *      MCP tool layer already enforced this is the intended semantics).
  *   3. Add each requested alarm via `Task.addNotification`. OmniJS's
  *      addNotification accepts either a Date (for absolute) or a Number
- *      of seconds (for relative; positive = before, negative = after).
+ *      of seconds (due-relative; negative = before, positive = after).
  *   4. Return JSON: { ok: true } on success, or
  *      { error: { code, message } } on transport-level failures.
  *
@@ -42,6 +42,15 @@
   if (!task) {
     return JSON.stringify({
       error: { code: "NOT_FOUND", message: `Task ${taskId} not found` },
+    });
+  }
+
+  if (alarms.some((alarm) => alarm.kind === "defer-relative")) {
+    return JSON.stringify({
+      error: {
+        code: "VALIDATION",
+        message: "Defer-relative notifications are not supported by OmniJS",
+      },
     });
   }
 
@@ -70,20 +79,15 @@
           });
         }
         task.addNotification(fireAt);
-      } else if (alarm.kind === "due-relative" || alarm.kind === "defer-relative") {
+      } else if (alarm.kind === "due-relative") {
         const seconds = Number(alarm.offsetSeconds);
         if (!Number.isFinite(seconds)) {
           return JSON.stringify({
             error: { code: "VALIDATION", message: `invalid offsetSeconds: ${alarm.offsetSeconds}` },
           });
         }
-        // OmniJS's addNotification(Number) treats the value as seconds-from-now
-        // for absolute; relative-to-due uses Task.dueDate / deferDate offsets.
-        // The OmniJS API accepts a fireOffset relative to the task's anchor
-        // when called with a Number. The kind distinguishes which anchor
-        // OmniFocus uses internally — `addNotification` reads the task's
-        // dueDate / deferDate when constructing the relative offset.
-        task.addNotification(seconds);
+        // Public offsets are positive before the due date; native offsets are negative before it.
+        task.addNotification(-seconds);
       } else {
         return JSON.stringify({
           error: { code: "VALIDATION", message: `unknown alarm kind: ${alarm.kind}` },

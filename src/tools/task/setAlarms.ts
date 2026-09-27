@@ -42,9 +42,9 @@ export const TASK_SET_ALARMS_DESCRIPTION =
   "Pass an array of alarms; this overwrites any existing alarms in full. " +
   "Each alarm is one of: " +
   "{kind:'due-relative', offsetSeconds:N} (positive = before due date, negative = after), " +
-  "{kind:'defer-relative', offsetSeconds:N} (relative to defer date), or " +
   "{kind:'absolute', fireAt:ISO-8601 string}. " +
-  "Relative kinds require the task to already have the corresponding date set, " +
+  "Defer-relative requests are unsupported and fail before removing existing notifications. " +
+  "Due-relative alarms require the task to already have a due date set, " +
   "or the call returns a VALIDATION error. " +
   "Use task_clear_alarms to remove all alarms with no payload. " +
   "Returns the updated task. " +
