@@ -100,14 +100,22 @@ describe("JxaTransport — listProjects", () => {
     expect(projects[0]?.status).toBe("active");
   });
 
-  it("passes folderId and status filters to the script", async () => {
+  it.each([
+    true,
+    false,
+  ])("passes folderId, status and flagged=%s to the script", async (flagged) => {
     const spawner = spawnerReturning({ projects: [] });
     const t = new JxaTransport({ spawner });
-    await t.listProjects({ folderId: "folder_xxx" as FolderId, status: "on-hold" });
+    await t.listProjects({ folderId: "folder_xxx" as FolderId, status: "on-hold", flagged });
     const call = (spawner as ReturnType<typeof vi.fn>).mock.calls[0] as [string, string];
-    const arg = JSON.parse(call[1] as string) as { folderId: string; status: string };
+    const arg = JSON.parse(call[1] as string) as {
+      folderId: string;
+      status: string;
+      flagged: boolean;
+    };
     expect(arg.folderId).toBe("folder_xxx");
     expect(arg.status).toBe("on-hold");
+    expect(arg.flagged).toBe(flagged);
   });
 
   it("returns empty array when no projects", async () => {

@@ -2,8 +2,8 @@
  * Unit tests for `ProjectService.list` and `ProjectService.get`.
  *
  * Contract verified here:
- * - Filter plumbing (folderId + status pushed to adapter; flagged +
- *   reviewDueBefore post-filtered in-service).
+ * - Filter plumbing (folderId + status + flagged pushed to adapter;
+ *   flagged + reviewDueBefore post-filtered in-service).
  * - Unbounded query rejection (no filter/limit/cursor → ValidationError).
  * - Pagination stable under `(createdAt ASC, id ASC)`; cursor round-trip;
  *   filter-hash mismatch rejects.
@@ -100,16 +100,16 @@ describe("ProjectService.list — filters", () => {
     expect(out.projects.map((p) => p.name)).toEqual(["in-folder"]);
   });
 
-  it("post-filters flagged in-service (adapter doesn't accept it)", async () => {
+  it.each([true, false])("pushes flagged=%s down to the adapter", async (flagged) => {
     const { service, adapter } = makeHarness();
     const flaggedId = await adapter.createProject({ name: "flag" });
     await adapter.createProject({ name: "plain" });
     await adapter.updateProject(flaggedId, { flagged: true });
 
     const spy = vi.spyOn(adapter, "listProjects");
-    const out = await service.list({ flagged: true });
-    expect((spy.mock.calls[0]?.[0] as { flagged?: unknown } | undefined)?.flagged).toBeUndefined();
-    expect(out.projects.map((p) => p.name)).toEqual(["flag"]);
+    const out = await service.list({ flagged });
+    expect(spy).toHaveBeenCalledWith({ flagged });
+    expect(out.projects.map((p) => p.name)).toEqual([flagged ? "flag" : "plain"]);
   });
 
   it("post-filters reviewDueBefore; excludes projects without a review interval", async () => {
