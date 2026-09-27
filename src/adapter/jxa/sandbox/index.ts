@@ -600,7 +600,12 @@ function makeConstructedTag(opts: { name?: string }): Record<string, unknown> {
   };
   defineWritableAccessor(tag, "name", opts.name ?? `Tag ${_constructedTagSeq}`);
   defineWritableAccessor(tag, "status", "active");
-  defineWritableAccessor(tag, "allowsNextAction", false);
+  tag.hidden = () => (tag.status as () => string)() === "dropped";
+  defineWritableAccessor(
+    tag,
+    "allowsNextAction",
+    () => (tag.status as () => string)() !== "on hold",
+  );
   return tag;
 }
 

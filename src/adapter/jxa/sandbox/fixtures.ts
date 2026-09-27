@@ -69,6 +69,7 @@ export interface FakeTagOverrides {
    */
   container?: () => unknown;
   status?: () => string;
+  hidden?: () => boolean;
   location?: () => unknown;
   creationDate?: () => Date;
   modificationDate?: () => Date;
@@ -105,6 +106,7 @@ export function fakeTag(
     parent: overrides.parent ?? throwing(),
     container: overrides.container ?? fn({ id: () => "_doc_" }),
     location: overrides.location ?? fn(null),
+    hidden: overrides.hidden ?? (() => (tag.status as () => string)() === "dropped"),
     creationDate: overrides.creationDate ?? fn(now),
     modificationDate: overrides.modificationDate ?? fn(now),
     tasks: overrides.tasks ?? fn([]),
@@ -117,7 +119,11 @@ export function fakeTag(
   // so throwing-getter overrides keep throwing until the script reassigns.
   defineWritableAccessor(tag, "name", overrides.name ?? fn(`Tag ${_tagSeq}`));
   defineWritableAccessor(tag, "status", overrides.status ?? fn("active"));
-  defineWritableAccessor(tag, "allowsNextAction", overrides.allowsNextAction ?? fn(false));
+  defineWritableAccessor(
+    tag,
+    "allowsNextAction",
+    overrides.allowsNextAction ?? (() => (tag.status as () => string)() !== "on hold"),
+  );
   return tag;
 }
 
