@@ -2554,7 +2554,7 @@ Capture a project as a reusable template under the Templates folder (env OMNIFOC
 
 ## project_update
 
-Partially update mutable fields on an OmniFocus project. Only supplied fields are changed; omit a field to leave it unchanged. Pass null for note, deferDate, dueDate, estimatedMinutes, or reviewIntervalDays to clear those fields. Do NOT use to create or delete projects; prefer project_create or project_delete instead. Safety controls: set dry_run=true to preview without mutating; pass expectedModifiedAt (from a recent project_get) to reject the call if the project changed since you read it; pass idempotency_key to coalesce retries so the same update is only performed once. Returns { updated: true, id, name } — name reflects the post-patch name. Side effects: writes to OmniFocus, sets meta.syncPending = true. Call sync_trigger when you need changes to appear on other devices. Example: project_update({ id: "prj123", name: "New Name", flagged: true }) Example: project_update({ id: "prj123", status: "on-hold", dry_run: true })
+Partially update mutable fields on an OmniFocus project. Only supplied fields are changed; omit a field to leave it unchanged. Pass null for note, deferDate, dueDate, or estimatedMinutes to clear those fields. Null reviewIntervalDays is unsupported: OmniFocus cannot remove the recurring review schedule. Do NOT use to create or delete projects; prefer project_create or project_delete instead. Safety controls: set dry_run=true to preview without mutating; pass expectedModifiedAt (from a recent project_get) to reject the call if the project changed since you read it; pass idempotency_key to coalesce retries so the same update is only performed once. Returns { updated: true, id, name } — name reflects the post-patch name. Side effects: writes to OmniFocus, sets meta.syncPending = true. Call sync_trigger when you need changes to appear on other devices. Example: project_update({ id: "prj123", name: "New Name", flagged: true }) Example: project_update({ id: "prj123", status: "on-hold", dry_run: true })
 
 ### Input
 
@@ -2573,7 +2573,7 @@ Partially update mutable fields on an OmniFocus project. Only supplied fields ar
 | `estimatedMinutes` | number | null | No | Estimated total duration in minutes. Pass null to clear. |
 | `flagged` | boolean | No | Flag or unflag the project. |
 | `tagIds` | string[] | No | Full-replacement tag list. Replaces all existing tags. |
-| `reviewIntervalDays` | number | null | No | Review interval in days. Pass null to clear. |
+| `reviewIntervalDays` | number | null | No | Positive review interval in days. Null returns an unsupported-operation error. |
 | `expectedModifiedAt` | string | No | Optimistic-concurrency guard: ISO-8601 timestamp from a recent project_get. If the project's current modifiedAt differs, the call fails with OF_CONFLICT and no update is performed. Omit to skip the check. |
 | `dry_run` | boolean | No | When true, validates input and returns a preview envelope with meta.dryRun = true; no adapter call is made and no mutation occurs. |
 | `idempotency_key` | string | No | Idempotency key for retry-safe updates. Identical subsequent calls within the TTL window replay the original envelope with meta.idempotentReplay = true instead of re-applying the patch. |
@@ -2622,7 +2622,7 @@ Preview what project_update would do without making any changes. Do NOT use to a
 | `estimatedMinutes` | number | null | No | Estimated total duration in minutes. Pass null to clear. |
 | `flagged` | boolean | No | Flag or unflag the project. |
 | `tagIds` | string[] | No | Full-replacement tag list. Replaces all existing tags. |
-| `reviewIntervalDays` | number | null | No | Review interval in days. Pass null to clear. |
+| `reviewIntervalDays` | number | null | No | Positive review interval in days. Null returns an unsupported-operation error. |
 | `expectedModifiedAt` | string | No | Optimistic-concurrency guard: ISO-8601 timestamp from a recent project_get. If the project's current modifiedAt differs, the call fails with OF_CONFLICT and no update is performed. Omit to skip the check. |
 | `dry_run` | boolean | No | When true, validates input and returns a preview envelope with meta.dryRun = true; no adapter call is made and no mutation occurs. |
 | `idempotency_key` | string | No | Idempotency key for retry-safe updates. Identical subsequent calls within the TTL window replay the original envelope with meta.idempotentReplay = true instead of re-applying the patch. |

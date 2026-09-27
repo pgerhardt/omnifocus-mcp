@@ -9,7 +9,7 @@
  *
  * Args (argv[0] JSON): { id: string, name?: string, note?: string|null,
  *   noteHtml?: string|null, status?: string, folderId?: string|null,
- *   deferDate?: string|null, dueDate?: string|null, flagged?: boolean,
+ *   deferDate?: string|null, dueDate?: string|null, flagged?: boolean, reviewIntervalDays?: number|null,
  *   tagIds?: string[] (full replacement; [] clears all tags)
  *   estimatedMinutes?: number|null, completionCriterion?: "parallel"|"sequential"|"singleActions" }
  * Returns JSON: { project: Project }
@@ -34,6 +34,24 @@ function run(argv) {
     "Project",
     args.id,
   );
+
+  if (args.reviewIntervalDays !== undefined) {
+    const days = args.reviewIntervalDays;
+    if (days === null) {
+      throw new Error(
+        "OF_UNSUPPORTED: OmniFocus cannot clear review intervals; supply positive days",
+      );
+    }
+    const interval = /** @type {{ unit: string, steps: number, fixed: boolean }} */ (
+      target.reviewInterval()
+    );
+    // @ts-expect-error — sdef property setter; JXA accepts assignment, generator emits method signature only.
+    target.reviewInterval = { unit: "day", steps: days, fixed: interval.fixed };
+    const actual = /** @type {typeof interval} */ (target.reviewInterval());
+    if (actual?.unit !== "day" || actual.steps !== days || actual.fixed !== interval.fixed) {
+      throw new Error("OF_UNSUPPORTED: requested review interval was not applied");
+    }
+  }
 
   if (args.tagIds !== undefined) {
     // Use supported OmniJS project tag methods through the JXA bridge.

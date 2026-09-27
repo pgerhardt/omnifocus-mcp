@@ -624,6 +624,9 @@ export class JxaTransport implements OmniFocusAdapter {
         ...(patch.completionCriterion !== undefined
           ? { completionCriterion: patch.completionCriterion }
           : {}),
+        ...(patch.reviewIntervalDays !== undefined
+          ? { reviewIntervalDays: patch.reviewIntervalDays }
+          : {}),
         ...(patch.tagIds !== undefined ? { tagIds: patch.tagIds } : {}),
       },
       { ...this.runOpts, scriptName: "project_update" },

@@ -2,8 +2,8 @@
  * `project_update` MCP tool — partial-patch update for OmniFocus projects.
  *
  * Only supplied fields are changed; omit a field to leave it unchanged.
- * Pass null for nullable fields (note, deferDate, dueDate, estimatedMinutes,
- * reviewIntervalDays) to clear them.
+ * Pass null for note, deferDate, dueDate, or estimatedMinutes to clear them.
+ * Null reviewIntervalDays is unsupported.
  *
  * Like the `*_delete` tools and `task_update`, `project_update` composes the
  * three safety primitives — optimistic concurrency (`expectedModifiedAt`),
@@ -41,7 +41,8 @@ import {
 export const PROJECT_UPDATE_DESCRIPTION =
   "Partially update mutable fields on an OmniFocus project. " +
   "Only supplied fields are changed; omit a field to leave it unchanged. " +
-  "Pass null for note, deferDate, dueDate, estimatedMinutes, or reviewIntervalDays to clear those fields. " +
+  "Pass null for note, deferDate, dueDate, or estimatedMinutes to clear those fields. " +
+  "Null reviewIntervalDays is unsupported: OmniFocus cannot remove the recurring review schedule. " +
   "Do NOT use to create or delete projects; prefer project_create or project_delete instead. " +
   "Safety controls: set dry_run=true to preview without mutating; pass expectedModifiedAt " +
   "(from a recent project_get) to reject the call if the project changed since you read it; " +
@@ -126,7 +127,7 @@ export const projectUpdateInputSchema = z.object({
     .positive()
     .nullable()
     .optional()
-    .describe("Review interval in days. Pass null to clear."),
+    .describe("Positive review interval in days. Null returns an unsupported-operation error."),
 
   // Safety-primitive controls (#246)
   expectedModifiedAt: z
