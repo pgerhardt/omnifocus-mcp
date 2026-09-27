@@ -29,7 +29,12 @@ function harness() {
   const app = {
     defaultDocument: {
       flattenedProjects: {
-        byId: () => ({ id: () => project?.id.primaryKey, name: () => project?.name }),
+        byId: () => ({
+          id: () => project?.id.primaryKey,
+          name: () => project?.name,
+          singletonActionHolder: () => false,
+          sequential: () => false,
+        }),
       },
     },
     evaluateJavascript: (source: string) =>
