@@ -167,6 +167,47 @@ describe("JxaTransport — createProject", () => {
 // ---------------------------------------------------------------------------
 
 describe("JxaTransport — updateProject", () => {
+  it.each([true, false])("applies reviewIntervalDays preserving fixed=%s", async (fixed) => {
+    let interval = { unit: "day", steps: 7, fixed };
+    const writes = { ignore: false, fail: false };
+    const project = fakeProject({ id: () => "proj_aaa" });
+    Object.defineProperty(project, "reviewInterval", {
+      get: () => () => ({ ...interval }),
+      set: (value: typeof interval) => {
+        if (writes.fail) throw new Error("native write failed");
+        if (!writes.ignore) interval = value;
+      },
+    });
+    const spawner: ScriptSpawner = async (script, jsonArg) => ({
+      stdout: JSON.stringify(
+        runJxaScriptInSandbox(script, JSON.parse(jsonArg), { projects: [project] }),
+      ),
+      stderr: "",
+      exitCode: 0,
+      timedOut: false,
+    });
+    const t = new JxaTransport({ spawner });
+    for (const reviewIntervalDays of [14, 7]) {
+      await t.updateProject("proj_aaa" as ProjectId, { reviewIntervalDays });
+      expect(interval).toEqual({ unit: "day", steps: reviewIntervalDays, fixed });
+    }
+    await t.updateProject("proj_aaa" as ProjectId, { flagged: true });
+    expect(interval).toEqual({ unit: "day", steps: 7, fixed });
+    await expect(
+      t.updateProject("proj_aaa" as ProjectId, { reviewIntervalDays: null }),
+    ).rejects.toThrow(/OF_UNSUPPORTED.*cannot clear review intervals/);
+    expect(interval).toEqual({ unit: "day", steps: 7, fixed });
+    writes.ignore = true;
+    await expect(
+      t.updateProject("proj_aaa" as ProjectId, { reviewIntervalDays: 14 }),
+    ).rejects.toThrow(/OF_UNSUPPORTED.*not applied/);
+    writes.fail = true;
+    await expect(
+      t.updateProject("proj_aaa" as ProjectId, { reviewIntervalDays: 14 }),
+    ).rejects.toThrow("native write failed");
+    expect(interval).toEqual({ unit: "day", steps: 7, fixed });
+  });
+
   it("forwards completionCriterion and applies native project-type transitions", async () => {
     const native = { singletonActionHolder: true, sequential: false };
     let ignoreWrites = false;
