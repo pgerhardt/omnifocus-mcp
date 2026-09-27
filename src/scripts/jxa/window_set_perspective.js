@@ -12,7 +12,7 @@
  *  or { error: { code: "NO_FRONT_WINDOW" | "NOT_FOUND", message } }
  *
  * Built-in perspectives (Inbox, Projects, Tags, Forecast, Flagged, Review, etc.)
- * and custom perspectives both work — JXA `Window.perspective` accepts either.
+ * and custom perspectives both work — JXA `Window.perspectiveName` accepts either.
  *
  * @see GH issue 466
  * @see src/adapter/jxa/JxaTransport.ts — setWindowPerspective() caller
@@ -34,18 +34,9 @@ function run(argv) {
 
   const w = wins[0];
 
-  // Look up the perspective by name. Both built-in and custom perspectives
-  // appear in `perspectives()`. We match exact name — case-sensitive, matches
-  // OF's own UX.
-  const all = ofApp.perspectives();
-  let target = null;
-  for (let i = 0; i < all.length; i++) {
-    if (all[i].name() === args.perspectiveName) {
-      target = all[i];
-      break;
-    }
-  }
-  if (!target) {
+  // The names collection includes built-ins without dereferencing them.
+  const names = /** @type {string[]} */ (ofApp.perspectiveNames());
+  if (names.indexOf(args.perspectiveName) === -1) {
     return JSON.stringify({
       error: {
         code: "NOT_FOUND",
@@ -54,6 +45,7 @@ function run(argv) {
     });
   }
 
-  w.perspective = target;
+  w.perspectiveName = args.perspectiveName;
+  if (w.perspectiveName() !== args.perspectiveName) throw new Error("Perspective switch failed");
   return JSON.stringify({ perspectiveName: args.perspectiveName });
 }
