@@ -245,7 +245,7 @@ export function fakeTask(
   defineWritableAccessor(task, "completed", overrides.completed ?? fn(false));
   defineWritableAccessor(task, "estimatedMinutes", overrides.estimatedMinutes ?? fn(null));
   defineWritableAccessor(task, "sequential", overrides.sequential ?? fn(false));
-  defineWritableAccessor(task, "containsSingletonActions", false);
+  defineWritableAccessor(task, "completedByChildren", overrides.completedByChildren ?? fn(false));
   return task;
 }
 

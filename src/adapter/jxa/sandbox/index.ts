@@ -761,7 +761,7 @@ function makeConstructedTask(opts: TaskConstructorOpts): Record<string, unknown>
   defineWritableAccessor(task, "dueDate", opts.dueDate ?? null);
   defineWritableAccessor(task, "estimatedMinutes", opts.estimatedMinutes ?? null);
   defineWritableAccessor(task, "sequential", opts.sequential ?? false);
-  defineWritableAccessor(task, "containsSingletonActions", false);
+  defineWritableAccessor(task, "completedByChildren", false);
   return task;
 }
 
