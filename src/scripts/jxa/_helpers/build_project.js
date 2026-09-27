@@ -169,12 +169,8 @@ function buildProject(proj) {
   }
 
   let completionCriterion = "parallel";
-  try {
-    const cc = proj.completionCriterion ? proj.completionCriterion() : "parallel";
-    completionCriterion = cc;
-  } catch (_e) {
-    /* OF 4.x: property access may not exist on all object types — default used */
-  }
+  if (proj.singletonActionHolder()) completionCriterion = "singleActions";
+  else if (proj.sequential()) completionCriterion = "sequential";
 
   // Guard against "Can't get object." thrown when invoking these — see #498.
   // JXA reports creationDate/modificationDate as truthy functions even on
