@@ -2378,24 +2378,51 @@ describe("JXA sandbox — project_set_next_review_date", () => {
 // ---------------------------------------------------------------------------
 
 describe("JXA sandbox — project_set_review_interval", () => {
-  it("sets the review interval in days", () => {
+  function fixture(fixed = true) {
+    let interval = { unit: "week", steps: 1, fixed };
     const target = fakeProject({ id: () => "project_target" });
-    const result = runJxaScriptInSandbox<{ id: string }>(
-      projectSetReviewIntervalScript,
-      { id: "project_target", days: 14 },
-      { projects: [target] },
-    );
-    expect(result.id).toBe("project_target");
+    const writes = { ignore: false, fail: false };
+    Object.defineProperty(target, "reviewInterval", {
+      get: () => () => ({ ...interval }),
+      set: (value: typeof interval) => {
+        if (writes.fail) throw new Error("native write failed");
+        if (!writes.ignore) interval = value;
+      },
+    });
+    const update = (days: number | null) =>
+      runJxaScriptInSandbox<{ id: string }>(
+        projectSetReviewIntervalScript,
+        { id: "project_target", days },
+        { projects: [target] },
+      );
+    return { read: () => interval, update, writes };
+  }
+
+  it.each([true, false])("writes native day records preserving fixed=%s", (fixed) => {
+    const { read, update } = fixture(fixed);
+    for (const days of [14, 7]) {
+      expect(update(days).id).toBe("project_target");
+      expect(read()).toEqual({ unit: "day", steps: days, fixed });
+    }
   });
 
-  it("clears the review interval when days is null", () => {
-    const target = fakeProject({ id: () => "project_target" });
-    const result = runJxaScriptInSandbox<{ id: string }>(
-      projectSetReviewIntervalScript,
-      { id: "project_target", days: null },
-      { projects: [target] },
-    );
-    expect(result.id).toBe("project_target");
+  it("rejects null without changing the native interval", () => {
+    const { read, update } = fixture();
+    expect(() => update(null)).toThrow(/OF_UNSUPPORTED.*cannot clear review intervals/);
+    expect(read()).toEqual({ unit: "week", steps: 1, fixed: true });
+  });
+
+  it("rejects a silently ignored write", () => {
+    const { read, update, writes } = fixture();
+    writes.ignore = true;
+    expect(() => update(14)).toThrow(/OF_UNSUPPORTED.*not applied/);
+    expect(read()).toEqual({ unit: "week", steps: 1, fixed: true });
+  });
+
+  it("propagates a native setter failure", () => {
+    const { update, writes } = fixture();
+    writes.fail = true;
+    expect(() => update(14)).toThrow("native write failed");
   });
 
   it("throws when the id does not exist", () => {

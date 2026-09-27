@@ -2,10 +2,11 @@
  * Tests for the `review_set_interval` tool — schema + handler envelope + cache invalidation.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { InMemoryAdapter } from "../../adapter/inMemory/InMemoryAdapter.js";
 import type { InvalidatingCache } from "../../cache/invalidation.js";
 import type { ResponseMeta } from "../../envelope/index.js";
+import { UnsupportedOperation } from "../../errors/index.js";
 import { ReviewService } from "../../services/reviewService.js";
 import {
   handleReviewSetInterval,
@@ -55,7 +56,7 @@ describe("review_set_interval — input schema", () => {
     });
   });
 
-  it("accepts null days to remove interval", () => {
+  it("accepts null so the writer can report it as unsupported", () => {
     expect(reviewSetIntervalInputSchema.parse({ id: "proj_001", days: null })).toEqual({
       id: "proj_001",
       days: null,
@@ -79,6 +80,10 @@ describe("review_set_interval — description", () => {
   it("mentions syncPending", () => {
     expect(REVIEW_SET_INTERVAL_DESCRIPTION).toMatch(/syncPending/i);
   });
+
+  it("documents that null is unsupported", () => {
+    expect(REVIEW_SET_INTERVAL_DESCRIPTION).toContain("Null is unsupported");
+  });
 });
 
 describe("review_set_interval — handler", () => {
@@ -100,13 +105,18 @@ describe("review_set_interval — handler", () => {
     expect(project.reviewIntervalDays).toBe(21);
   });
 
-  it("removes review interval when days is null", async () => {
+  it("propagates an unsupported null write without reporting success", async () => {
     const { ctx, adapter } = makeCtx();
     const id = await adapter.createProject({ name: "p1", reviewIntervalDays: 7 });
 
-    await handleReviewSetInterval({ id, days: null }, ctx);
+    vi.spyOn(adapter, "setProjectReviewInterval").mockRejectedValue(
+      new UnsupportedOperation("OmniFocus cannot clear review intervals"),
+    );
+    await expect(handleReviewSetInterval({ id, days: null }, ctx)).rejects.toBeInstanceOf(
+      UnsupportedOperation,
+    );
     const project = await adapter.getProject(id);
-    expect(project.reviewIntervalDays).toBeNull();
+    expect(project.reviewIntervalDays).toBe(7);
   });
 
   it("invalidates project cache scope after setting interval", async () => {
@@ -138,14 +148,5 @@ describe("review_set_interval pairs name with id (#607)", () => {
     expect(env.data.id).toBe(id);
     expect(env.data.name).toBe("Reading list");
     expect(env.data.reviewIntervalDays).toBe(90);
-  });
-
-  it("returns null reviewIntervalDays when cleared", async () => {
-    const { ctx, adapter } = makeCtx();
-    const id = await adapter.createProject({ name: "Backlog", reviewIntervalDays: 7 });
-
-    const env = await handleReviewSetInterval({ id, days: null }, ctx);
-    expect(env.data.name).toBe("Backlog");
-    expect(env.data.reviewIntervalDays).toBeNull();
   });
 });
