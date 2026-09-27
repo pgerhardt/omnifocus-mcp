@@ -53,6 +53,8 @@ interface Task {
 }
 
 interface Project {
+  /** Native scalar record, verified against individual getters on live OmniFocus. */
+  properties(): Record<string, unknown>;
   /** Runtime convenience over `note.fileAttachments` — see file header. */
   fileAttachments: JxaCollection<FileAttachment> & (() => JxaCollection<FileAttachment>);
 }

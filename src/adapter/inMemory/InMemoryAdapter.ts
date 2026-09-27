@@ -775,11 +775,12 @@ export class InMemoryAdapter implements OmniFocusAdapter {
   // -- Projects -------------------------------------------------------------
 
   async listProjects(
-    filter: { folderId?: FolderId; status?: Project["status"] } = {},
+    filter: { folderId?: FolderId; status?: Project["status"]; flagged?: boolean } = {},
   ): Promise<Project[]> {
     return Array.from(this.projects.values()).filter((p) => {
       if (filter.folderId !== undefined && p.folderId !== filter.folderId) return false;
       if (filter.status !== undefined && p.status !== filter.status) return false;
+      if (filter.flagged !== undefined && p.flagged !== filter.flagged) return false;
       return true;
     });
   }

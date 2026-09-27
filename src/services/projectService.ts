@@ -260,14 +260,16 @@ export class ProjectService {
     limit: number,
     filterHash: string,
   ): Promise<{ projects: Project[]; nextCursor: string | null }> {
-    // Push folderId + status down; adapter rejects unknown keys.
-    const adapterFilter: { folderId?: FolderId; status?: Project["status"] } = {};
+    // Push cheap predicates down; retain final checks before pagination.
+    const adapterFilter: { folderId?: FolderId; status?: Project["status"]; flagged?: boolean } =
+      {};
     if (normalized.folderId !== undefined) adapterFilter.folderId = normalized.folderId;
     if (normalized.status !== undefined) adapterFilter.status = normalized.status;
+    if (normalized.flagged !== undefined) adapterFilter.flagged = normalized.flagged;
 
     const raw = await this.adapter.listProjects(adapterFilter);
 
-    // Post-filter: flagged + reviewDueBefore (adapter primitive doesn't accept these).
+    // Post-filter: retain the flagged guard; reviewDueBefore remains service-only.
     // Compare reviewDueBefore as instants, not strings: nextReviewDate is
     // always UTC (`...Z`) but the threshold may carry a non-UTC offset, and
     // lexicographic comparison across different offsets is not an instant

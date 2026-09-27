@@ -369,7 +369,11 @@ export class TransportRouter implements OmniFocusAdapter {
 
   // -- Projects -------------------------------------------------------------
 
-  listProjects(filter?: { folderId?: FolderId; status?: Project["status"] }): Promise<Project[]> {
+  listProjects(filter?: {
+    folderId?: FolderId;
+    status?: Project["status"];
+    flagged?: boolean;
+  }): Promise<Project[]> {
     return this.pick("listProjects").listProjects(filter);
   }
   getProject(id: ProjectId): Promise<Project> {

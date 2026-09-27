@@ -561,10 +561,15 @@ export class JxaTransport implements OmniFocusAdapter {
   async listProjects(filter?: {
     folderId?: FolderId;
     status?: Project["status"];
+    flagged?: boolean;
   }): Promise<Project[]> {
     const result = await runJxaScript<{ projects: Project[] }>(
       projectListScript,
-      { folderId: filter?.folderId ?? null, status: filter?.status ?? null },
+      {
+        folderId: filter?.folderId ?? null,
+        status: filter?.status ?? null,
+        flagged: filter?.flagged ?? null,
+      },
       { ...this.runOpts, scriptName: "project_list" },
     );
     return result.projects.map((p) => ({ ...p, id: ProjectIdCtor.of(p.id) }));

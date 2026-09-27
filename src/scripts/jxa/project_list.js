@@ -5,9 +5,9 @@
 /// <reference path="_types/sdef-overrides.d.ts" />
 
 /**
- * JXA: list projects, optionally filtered by folderId or status.
+ * JXA: list projects, optionally filtered by folderId, status or flagged.
  *
- * Args (argv[0] JSON): { folderId?: string|null, status?: string|null }
+ * Args (argv[0] JSON): { folderId?: string|null, status?: string|null, flagged?: boolean|null }
  * Returns JSON: { projects: Project[] }
  *
  * @see src/adapter/jxa/JxaTransport.ts — caller
@@ -36,9 +36,33 @@ function run(argv) {
   }
 
   const result = [];
+  const hasOwn = Object.prototype.hasOwnProperty;
   for (let i = 0; i < projects.length; i++) {
-    const built = buildProject(projects[i]);
+    let properties;
+    if (args.status != null || args.flagged != null) {
+      try {
+        properties = projects[i].properties() ?? null;
+      } catch (_e) {
+        properties = null; // Preserve the serializer's getter fallback.
+      }
+      if (properties != null) {
+        if (
+          args.status != null &&
+          hasOwn.call(properties, "status") &&
+          normalizeStatus(properties.status) !== args.status
+        )
+          continue;
+        if (
+          args.flagged != null &&
+          hasOwn.call(properties, "flagged") &&
+          properties.flagged !== args.flagged
+        )
+          continue;
+      }
+    }
+    const built = buildProject(projects[i], properties);
     if (args.status !== null && args.status !== undefined && built.status !== args.status) continue;
+    if (args.flagged != null && built.flagged !== args.flagged) continue;
     result.push(built);
   }
 

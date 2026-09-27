@@ -22,15 +22,17 @@
  *     The call must be guarded, not just the property reference.
  *
  * @param {object} proj — JXA Project specifier
+ * @param {object|null} [properties] — optional native record already read by the caller
  * @returns {object} canonical Project shape per `src/domain/project.ts`
  */
 // biome-ignore lint/correctness/noUnusedVariables: inlined into JXA consumers via @inline directive (ADR-0020).
-function buildProject(proj) {
-  let properties = null;
-  try {
-    properties = proj.properties();
-  } catch (_e) {
-    /* Fall back to individual getters when the native record is unavailable. */
+function buildProject(proj, properties) {
+  if (properties === undefined) {
+    try {
+      properties = proj.properties();
+    } catch (_e) {
+      properties = null; // Fall back to individual getters.
+    }
   }
   function readScalar(key) {
     // biome-ignore lint/suspicious/noPrototypeBuiltins: preserve compatibility with older JXA JavaScriptCore runtimes.

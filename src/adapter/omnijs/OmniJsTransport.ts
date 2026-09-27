@@ -407,6 +407,7 @@ export class OmniJsTransport implements OmniFocusAdapter {
   async listProjects(_filter?: {
     folderId?: FolderId;
     status?: Project["status"];
+    flagged?: boolean;
   }): Promise<Project[]> {
     return notYetWired("listProjects");
   }

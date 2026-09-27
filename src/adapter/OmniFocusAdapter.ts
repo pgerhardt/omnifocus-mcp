@@ -440,7 +440,11 @@ export interface OmniFocusAdapter {
 
   // -- Projects --------------------------------------------------------------
 
-  listProjects(filter?: { folderId?: FolderId; status?: Project["status"] }): Promise<Project[]>;
+  listProjects(filter?: {
+    folderId?: FolderId;
+    status?: Project["status"];
+    flagged?: boolean;
+  }): Promise<Project[]>;
   getProject(id: ProjectId): Promise<Project>;
   /** Bulk fetch by ID list — returns projects in input order. Missing IDs return `null` for that position. */
   getProjectsMany(ids: ProjectId[]): Promise<(Project | null)[]>;
