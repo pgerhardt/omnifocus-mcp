@@ -44,7 +44,10 @@
  * @see src/scripts/jxa/_helpers/build_task.js
  */
 // biome-ignore lint/suspicious/noExplicitAny: helper return is the projected domain shape — see file header.
-declare function buildTask(task: unknown, options?: { effectiveAvailability?: boolean; completed?: boolean }): any;
+declare function buildTask(task: unknown, options?: { effectiveAvailability?: boolean; completed?: boolean; notificationsById?: Record<string, object[]> }): any;
+
+/** Read native task notifications keyed by persistent ID, preserving native list order. */
+declare function readTaskNotifications(taskIds: string[]): Record<string, object[]>;
 
 /**
  * Build the repetition sub-object of a Task (rrule + anchor +

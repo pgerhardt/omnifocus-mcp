@@ -24,6 +24,7 @@
  * @param {object} [options]
  * @param {boolean} [options.effectiveAvailability=false] — retained for compatibility; availability is always derived from effective JXA state.
  * @param {boolean} [options.completed] — local completion state already read by the caller.
+ * @param {Record<string, object[]>} [options.notificationsById] — notifications read for this selection, keyed by persistent ID.
  * @returns {object} canonical Task shape per `src/domain/task.ts`
  */
 // biome-ignore lint/correctness/noUnusedVariables: inlined into JXA consumers via @inline directive (ADR-0020).
@@ -210,22 +211,19 @@ function buildTask(task, options) {
     modifiedAt = new Date().toISOString();
   }
 
-  const notifications = JSON.parse(
-    Application("OmniFocus").evaluateJavascript(`(() => {
-    const task = Task.byIdentifier(${JSON.stringify(task.id())});
-    return JSON.stringify(task.notifications.map(n => {
-      const kinds = Task.Notification.Kind;
-      if (n.kind === kinds.Absolute) return { kind: "absolute", fireAt: n.absoluteFireDate.toISOString() };
-      if (n.kind === kinds.DueRelative || n.kind === kinds.DeferRelative) {
-        return { kind: n.kind === kinds.DueRelative ? "due-relative" : "defer-relative", offsetSeconds: -n.relativeFireOffset };
-      }
-      throw new Error("Unsupported notification kind");
-    }));
-  })()`),
-  );
+  const id = task.id();
+  const notificationsById = options.notificationsById ?? readTaskNotifications([id]);
+  if (
+    // biome-ignore lint/suspicious/noPrototypeBuiltins: preserve compatibility with older JXA JavaScriptCore runtimes.
+    !Object.prototype.hasOwnProperty.call(notificationsById, id) ||
+    !Array.isArray(notificationsById[id])
+  ) {
+    throw new Error(`Missing notifications for task ${id}`);
+  }
+  const notifications = notificationsById[id];
 
   return {
-    id: task.id(),
+    id: id,
     name: task.name(),
     note: note,
     noteHtml: null,
@@ -251,6 +249,29 @@ function buildTask(task, options) {
     createdAt: createdAt,
     modifiedAt: modifiedAt,
   };
+}
+
+/** Read notifications in one OmniJS call; failures propagate rather than imply no alarms. */
+function readTaskNotifications(taskIds) {
+  if (taskIds.length === 0) return {};
+  return JSON.parse(
+    Application("OmniFocus").evaluateJavascript(`(() => {
+    const result = Object.create(null);
+    for (const id of ${JSON.stringify(taskIds)}) {
+      const task = Task.byIdentifier(id);
+      if (!task) throw new Error("Task not found: " + id);
+      result[id] = task.notifications.map(n => {
+        const kinds = Task.Notification.Kind;
+        if (n.kind === kinds.Absolute) return { kind: "absolute", fireAt: n.absoluteFireDate.toISOString() };
+        if (n.kind === kinds.DueRelative || n.kind === kinds.DeferRelative) {
+          return { kind: n.kind === kinds.DueRelative ? "due-relative" : "defer-relative", offsetSeconds: -n.relativeFireOffset };
+        }
+        throw new Error("Unsupported notification kind");
+      });
+    }
+    return JSON.stringify(result);
+  })()`),
+  );
 }
 
 // OmniFocus 4.x note (#1071): the JXA RepetitionRule specifier does NOT expose

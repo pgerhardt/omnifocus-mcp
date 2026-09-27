@@ -135,6 +135,9 @@ function run(argv) {
     }
   }
 
+  const notificationsById = inboxCompletionSelected
+    ? readTaskNotifications(tasks.map((task) => task.id()))
+    : undefined;
   const result = [];
   for (let i = 0; i < tasks.length; i++) {
     const t = tasks[i];
@@ -149,7 +152,7 @@ function run(argv) {
       }
       if (completed !== false) continue;
     }
-    const built = buildTask(t, { completed });
+    const built = buildTask(t, { completed, notificationsById });
 
     if (args.tagId !== null && args.tagId !== undefined) {
       if (!built.tagIds.includes(args.tagId)) continue;
