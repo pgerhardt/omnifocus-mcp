@@ -209,6 +209,20 @@ function buildTask(task, options) {
     modifiedAt = new Date().toISOString();
   }
 
+  const notifications = JSON.parse(
+    Application("OmniFocus").evaluateJavascript(`(() => {
+    const task = Task.byIdentifier(${JSON.stringify(task.id())});
+    return JSON.stringify(task.notifications.map(n => {
+      const kinds = Task.Notification.Kind;
+      if (n.kind === kinds.Absolute) return { kind: "absolute", fireAt: n.absoluteFireDate.toISOString() };
+      if (n.kind === kinds.DueRelative || n.kind === kinds.DeferRelative) {
+        return { kind: n.kind === kinds.DueRelative ? "due-relative" : "defer-relative", offsetSeconds: -n.relativeFireOffset };
+      }
+      throw new Error("Unsupported notification kind");
+    }));
+  })()`),
+  );
+
   return {
     id: task.id(),
     name: task.name(),
@@ -232,6 +246,7 @@ function buildTask(task, options) {
     sequential: sequential,
     completedByChildren: completedByChildren,
     repetition: buildRepetition(task),
+    notifications: notifications,
     createdAt: createdAt,
     modifiedAt: modifiedAt,
   };
