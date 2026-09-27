@@ -210,7 +210,7 @@ function buildProject(proj) {
     reviewIntervalDays: reviewIntervalDays,
     nextReviewDate: nextReviewDate,
     lastReviewDate: lastReviewDate,
-    completed: status === "completed",
+    completed: status === "done",
     completedAt: completedAt,
     dropped: status === "dropped",
     droppedAt: status === "dropped" ? completedAt : null,
@@ -226,6 +226,5 @@ function normalizeStatus(raw) {
   // (e.g. "active status", "on hold status"). Strip for uniform handling.
   const s = typeof raw === "string" ? raw.replace(/ status$/, "") : raw;
   if (s === "on hold") return "on-hold";
-  if (s === "done") return "completed";
-  return s; // "active", "dropped"
+  return s; // "active", "done", "dropped"
 }
