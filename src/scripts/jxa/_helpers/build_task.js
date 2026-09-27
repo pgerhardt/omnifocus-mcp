@@ -109,6 +109,14 @@ function buildTask(task, options) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
 
+  let droppedAt = null;
+  try {
+    const date = task.droppedDate();
+    if (date) droppedAt = date.toISOString();
+  } catch (_e) {
+    /* Leave unknown drop dates null. */
+  }
+
   let estimatedMinutes = null;
   try {
     const em = task.estimatedMinutes();
@@ -209,7 +217,7 @@ function buildTask(task, options) {
     completed: completed,
     completedAt: completedAt,
     dropped: dropped,
-    droppedAt: null,
+    droppedAt: droppedAt,
     available: available,
     blocked: blocked,
     sequential: sequential,

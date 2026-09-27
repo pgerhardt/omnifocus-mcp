@@ -95,6 +95,14 @@ function buildProject(proj) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
 
+  let droppedAt = null;
+  try {
+    const date = proj.droppedDate();
+    if (date) droppedAt = date.toISOString();
+  } catch (_e) {
+    /* Leave unknown drop dates null. */
+  }
+
   let estimatedMinutes = null;
   try {
     const em = proj.estimatedMinutes();
@@ -209,7 +217,7 @@ function buildProject(proj) {
     completed: status === "done",
     completedAt: completedAt,
     dropped: status === "dropped",
-    droppedAt: status === "dropped" ? completedAt : null,
+    droppedAt: droppedAt,
     taskCount: taskCount,
     completedTaskCount: completedTaskCount,
     createdAt: createdAt,
