@@ -36,3 +36,28 @@ it.each([
     }
   }
 });
+
+it.each([300, -300])("maps public due offset %s to native seconds", (offsetSeconds) => {
+  const task = { notifications: [], addNotification: vi.fn() };
+  const result = JSON.parse(
+    vm.runInNewContext(setScript, {
+      Task: { byIdentifier: () => task },
+      __args: { taskId: "fixture", alarms: [{ kind: "due-relative", offsetSeconds }] },
+    }),
+  );
+  expect(result).toEqual({ ok: true });
+  expect(task.addNotification).toHaveBeenCalledWith(-offsetSeconds);
+});
+
+it("rejects unsupported defer anchors before clearing existing notifications", () => {
+  const task = { notifications: [{}], removeNotification: vi.fn(), addNotification: vi.fn() };
+  const result = JSON.parse(
+    vm.runInNewContext(setScript, {
+      Task: { byIdentifier: () => task },
+      __args: { taskId: "fixture", alarms: [{ kind: "defer-relative", offsetSeconds: 300 }] },
+    }),
+  );
+  expect(result.error.code).toBe("VALIDATION");
+  expect(task.removeNotification).not.toHaveBeenCalled();
+  expect(task.addNotification).not.toHaveBeenCalled();
+});
