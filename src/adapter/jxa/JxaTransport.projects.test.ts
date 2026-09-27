@@ -70,6 +70,27 @@ const BASE_PROJECT = {
 // ---------------------------------------------------------------------------
 
 describe("JxaTransport — listProjects", () => {
+  it.each(["done", "done status"])("serializes and filters native %s as done", async (status) => {
+    const done = fakeProject({ id: () => "proj_done", status: () => status });
+    const active = fakeProject({ id: () => "proj_active", status: () => "active status" });
+    const spawner: ScriptSpawner = async (script, jsonArg) => ({
+      stdout: JSON.stringify(
+        runJxaScriptInSandbox(script, JSON.parse(jsonArg), { projects: [done, active] }),
+      ),
+      stderr: "",
+      exitCode: 0,
+      timedOut: false,
+    });
+    const t = new JxaTransport({ spawner });
+    expect(await t.getProject("proj_done" as ProjectId)).toMatchObject({
+      id: "proj_done",
+      status: "done",
+      completed: true,
+    });
+    expect((await t.listProjects({ status: "done" })).map((p) => p.id)).toEqual(["proj_done"]);
+    expect((await t.listProjects({ status: "active" })).map((p) => p.id)).toEqual(["proj_active"]);
+  });
+
   it("returns parsed projects with branded IDs", async () => {
     const t = new JxaTransport({ spawner: spawnerReturning({ projects: [BASE_PROJECT] }) });
     const projects = await t.listProjects();
