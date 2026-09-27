@@ -109,28 +109,24 @@ describe("JXA sandbox — tag_list", () => {
     expect(result.tags).toHaveLength(0);
   });
 
-  it("falls back to now when creationDate() throws — regression #498", () => {
-    const before = Date.now();
+  it("reads native OmniJS dates when JXA creationDate() throws", () => {
     const t = fakeTag({ creationDate: throwing("Can't get object.") });
     const result = runJxaScriptInSandbox<{ tags: { createdAt: string }[] }>(
       tagListScript,
       {},
       { tags: [t] },
     );
-    const createdAt = new Date(result.tags[0]?.createdAt ?? "").getTime();
-    expect(createdAt).toBeGreaterThanOrEqual(before);
+    expect(result.tags[0]?.createdAt).toBe("2020-01-02T03:04:05.000Z");
   });
 
-  it("falls back to now when modificationDate() throws", () => {
-    const before = Date.now();
+  it("reads native OmniJS dates when JXA modificationDate() throws", () => {
     const t = fakeTag({ modificationDate: throwing("Can't get object.") });
     const result = runJxaScriptInSandbox<{ tags: { modifiedAt: string }[] }>(
       tagListScript,
       {},
       { tags: [t] },
     );
-    const modifiedAt = new Date(result.tags[0]?.modifiedAt ?? "").getTime();
-    expect(modifiedAt).toBeGreaterThanOrEqual(before);
+    expect(result.tags[0]?.modifiedAt).toBe("2021-02-03T04:05:06.000Z");
   });
 
   it("parentId is null when container() throws", () => {
@@ -704,8 +700,7 @@ describe("JXA sandbox — tag_get", () => {
     ).toThrow("Tag not found: missing");
   });
 
-  it("falls back to now when creationDate() throws — regression #498", () => {
-    const before = Date.now();
+  it("reads native OmniJS dates when JXA creationDate() throws", () => {
     const t = fakeTag({
       id: () => "tag_only",
       creationDate: throwing("Can't get object."),
@@ -715,7 +710,7 @@ describe("JXA sandbox — tag_get", () => {
       { id: "tag_only" },
       { tags: [t] },
     );
-    expect(new Date(result.tag.createdAt).getTime()).toBeGreaterThanOrEqual(before);
+    expect(result.tag.createdAt).toBe("2020-01-02T03:04:05.000Z");
   });
 
   it("derives parentId from container().id() when it isn't the document — regression #673/#766", () => {

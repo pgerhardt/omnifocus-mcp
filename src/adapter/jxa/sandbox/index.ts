@@ -500,7 +500,15 @@ function buildFakeApp(document: ReturnType<typeof buildFakeDocument>, doc: Sandb
     // `ofApp.evaluateJavascript(omniJsScript)` because JXA's addTag/removeTag
     // silently no-op on existing tasks (#716). We don't model the OmniJS
     // semantics — the call just must not throw.
-    evaluateJavascript: (_script: unknown) => undefined,
+    evaluateJavascript: (script: unknown) => {
+      if (typeof script === "string" && script.includes("tag.added.toISOString()")) {
+        return JSON.stringify({
+          createdAt: "2020-01-02T03:04:05.000Z",
+          modifiedAt: "2021-02-03T04:05:06.000Z",
+        });
+      }
+      return undefined;
+    },
     delete: (target: unknown) => {
       deleted.push(target);
     },
