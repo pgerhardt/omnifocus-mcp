@@ -483,6 +483,7 @@ function buildFakeApp(document: ReturnType<typeof buildFakeDocument>, doc: Sandb
     inbox: document.inbox,
     windows: () => windows,
     perspectives: () => perspectives,
+    perspectiveNames: () => perspectives.map((p) => (p as { name: () => string }).name()),
     Folder: folderConstructor,
     Tag: tagConstructor,
     Project: projectConstructor,

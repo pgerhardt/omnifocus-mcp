@@ -495,10 +495,7 @@ export interface FakeWindowOverrides {
 /** Build a fake JXA Window object as used by `window_get_state.js`. */
 export function fakeWindow(overrides: FakeWindowOverrides = {}) {
   const win: Record<string, unknown> = {};
-  // perspectiveName is read-only on Window in JXA (window_get_state reads
-  // it; window_set_perspective writes the separate `perspective` field).
-  // Keep the function override for the read path.
-  win.perspectiveName = overrides.perspectiveName ?? fn("Forecast");
+  defineWritableAccessor(win, "perspectiveName", overrides.perspectiveName ?? fn("Forecast"));
   // window_set_focus.js assigns `w.focus = [target]`; build_..._for read
   // via `w.focus()`. window_set_perspective.js assigns `w.perspective = X`
   // (write-only). Use writable accessors for both.
