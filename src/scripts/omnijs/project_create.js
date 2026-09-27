@@ -21,6 +21,7 @@
  *     completionCriterion?: "parallel" | "sequential" | "singleActions" | null,
  *     reviewIntervalDays?: number|null,
  *     nextReviewDate?: string|null,  // ISO-8601-with-offset
+ *     tagIds?: string[],
  *   }
  *
  * Returns JSON: { project: Project } where Project mirrors the JXA build shape.
@@ -57,6 +58,17 @@
     position = library.ending;
   }
 
+  // Resolve every tag before creating anything; never ignore missing IDs.
+  const tagIds = Array.from(new Set(args.tagIds || []));
+  const tags = [];
+  for (const id of tagIds) {
+    const tag = Tag.byIdentifier(id);
+    if (!tag) {
+      return JSON.stringify({ error: { code: "NOT_FOUND", message: `Tag not found: ${id}` } });
+    }
+    tags.push(tag);
+  }
+
   // `new Project(name, position)` is the canonical OmniJS create — produces
   // a real persistent id.primaryKey.
   const proj = new Project(args.name, position);
@@ -66,6 +78,14 @@
   // just-constructed project and return an error envelope — creation is
   // atomic (#1073).
   try {
+    if (args.tagIds !== undefined) {
+      proj.clearTags();
+      proj.addTags(tags);
+      const actual = proj.tags.map((tag) => tag.id.primaryKey);
+      if (actual.length !== tagIds.length || tagIds.some((id) => !actual.includes(id))) {
+        throw new Error("requested project tags were not applied");
+      }
+    }
     if (args.note != null) proj.note = args.note;
     if (args.deferDate != null) proj.deferDate = new Date(args.deferDate);
     if (args.dueDate != null) proj.dueDate = new Date(args.dueDate);

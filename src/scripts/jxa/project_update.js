@@ -10,6 +10,7 @@
  * Args (argv[0] JSON): { id: string, name?: string, note?: string|null,
  *   noteHtml?: string|null, status?: string, folderId?: string|null,
  *   deferDate?: string|null, dueDate?: string|null, flagged?: boolean,
+ *   tagIds?: string[] (full replacement; [] clears all tags)
  *   estimatedMinutes?: number|null, completionCriterion?: "parallel"|"sequential"|"singleActions" }
  * Returns JSON: { project: Project }
  *
@@ -33,6 +34,26 @@ function run(argv) {
     "Project",
     args.id,
   );
+
+  if (args.tagIds !== undefined) {
+    // Use supported OmniJS project tag methods through the JXA bridge.
+    ofApp.evaluateJavascript(`(() => {
+      const project = Project.byIdentifier(${JSON.stringify(args.id)});
+      if (!project) throw new Error("Project not found: " + ${JSON.stringify(args.id)});
+      const tagIds = Array.from(new Set(${JSON.stringify(args.tagIds)}));
+      const tags = tagIds.map(id => {
+        const tag = Tag.byIdentifier(id);
+        if (!tag) throw new Error("Tag not found: " + id);
+        return tag;
+      });
+      project.clearTags();
+      project.addTags(tags);
+      const actual = project.tags.map(tag => tag.id.primaryKey);
+      if (actual.length !== tagIds.length || tagIds.some(id => !actual.includes(id))) {
+        throw new Error("OF_UNSUPPORTED: requested project tags were not applied");
+      }
+    })()`);
+  }
 
   if (args.completionCriterion !== undefined) {
     if (!["parallel", "sequential", "singleActions"].includes(args.completionCriterion)) {

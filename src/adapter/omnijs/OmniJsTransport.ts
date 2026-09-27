@@ -436,6 +436,7 @@ export class OmniJsTransport implements OmniFocusAdapter {
         status: input.status ?? null,
         completionCriterion: input.completionCriterion ?? null,
         reviewIntervalDays: input.reviewIntervalDays ?? null,
+        ...(input.tagIds !== undefined ? { tagIds: input.tagIds } : {}),
       },
       { ...this.runOpts, scriptName: "project_create" },
     );
