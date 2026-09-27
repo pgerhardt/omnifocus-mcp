@@ -48,3 +48,19 @@ it.each([
     tag: { status },
   });
 });
+
+it.each(["notify when arriving", "notify when leaving"])("reads location record %s", (trigger) => {
+  const location = { name: "Place", latitude: 40, longitude: -105, radius: 0.2, trigger };
+  const tag = fakeTag({ id: () => "tag", location: () => location });
+  expect(runJxaScriptInSandbox(tagGet, { id: "tag" }, { tags: [tag] })).toMatchObject({
+    tag: {
+      location: {
+        name: "Place",
+        latitude: 40,
+        longitude: -105,
+        radiusMeters: 200,
+        trigger: trigger === "notify when arriving" ? "entering" : "leaving",
+      },
+    },
+  });
+});
