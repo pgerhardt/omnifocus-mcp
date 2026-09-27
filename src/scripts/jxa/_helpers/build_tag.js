@@ -80,20 +80,12 @@ function buildTag(tag, docId) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
 
-  // Guard against "Can't get object." thrown when invoking these — see #498.
-  let createdAt;
-  try {
-    createdAt = tag.creationDate().toISOString();
-  } catch (_e) {
-    createdAt = new Date().toISOString();
-  }
-
-  let modifiedAt;
-  try {
-    modifiedAt = tag.modificationDate().toISOString();
-  } catch (_e) {
-    modifiedAt = new Date().toISOString();
-  }
+  // Tag dates are exposed by OmniJS DatedObject, not JXA Tag accessors.
+  const dates = JSON.parse(
+    Application("OmniFocus").evaluateJavascript(
+      `(() => { const tag = Tag.byIdentifier(${JSON.stringify(tag.id())}); return JSON.stringify({ createdAt: tag.added.toISOString(), modifiedAt: tag.modified.toISOString() }); })()`,
+    ),
+  );
 
   return {
     id: tag.id(),
@@ -103,7 +95,7 @@ function buildTag(tag, docId) {
     location: location,
     allowsNextAction: allowsNextAction,
     taskCount: taskCount,
-    createdAt: createdAt,
-    modifiedAt: modifiedAt,
+    createdAt: dates.createdAt,
+    modifiedAt: dates.modifiedAt,
   };
 }
