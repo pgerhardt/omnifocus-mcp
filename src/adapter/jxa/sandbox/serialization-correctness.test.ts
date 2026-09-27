@@ -19,3 +19,16 @@ describe("native dropped timestamps", () => {
     });
   });
 });
+
+it.each([false, true])("serializes native floating timezone %s", (floating) => {
+  const flags = { shouldUseFloatingTimeZone: () => floating };
+  const task = Object.assign(fakeTask({ id: () => "task" }), flags);
+  const project = Object.assign(fakeProject({ id: () => "project" }), flags);
+  const expected = { deferDateFloating: floating, dueDateFloating: floating };
+  expect(runJxaScriptInSandbox(taskGet, { id: "task" }, { tasks: [task] })).toMatchObject({
+    task: expected,
+  });
+  expect(
+    runJxaScriptInSandbox(projectGet, { id: "project" }, { projects: [project] }),
+  ).toMatchObject({ project: expected });
+});
