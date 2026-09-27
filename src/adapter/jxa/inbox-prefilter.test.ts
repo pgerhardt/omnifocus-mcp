@@ -36,6 +36,38 @@ function harness(inbox: ReturnType<typeof task>[]) {
 }
 
 describe("Inbox completion prefilter through service and JXA transport", () => {
+  it("uses native local-completion selection without rereading flags or changing records/order", async () => {
+    const done = task("done", true);
+    const survivors = [task("zzz", false), task("aaa", false)] as const;
+    Object.assign(survivors[0], { effectivelyCompleted: () => true, dropped: () => true });
+    const { app, spawner } = harness([survivors[0], done, survivors[1]]);
+    const adapter = new JxaTransport({ spawner });
+    const baseline = await adapter.listTasks({ inbox: true, completed: false });
+    const whose = vi.fn(() => () => survivors);
+    Object.assign(app.defaultDocument.inboxTasks, { whose });
+    vi.clearAllMocks();
+    expect(await adapter.listTasks({ inbox: true, completed: false })).toEqual(baseline);
+    expect(whose).toHaveBeenCalledExactlyOnceWith({ completed: false });
+    for (const t of [done, ...survivors]) expect(t.completed).not.toHaveBeenCalled();
+    expect(done.name).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the existing local scan if the native predicate is rejected", async () => {
+    const done = task("done", true);
+    const open = task("open", false);
+    const { app, service } = harness([done, open]);
+    Object.assign(app.defaultDocument.inboxTasks, {
+      whose: () => {
+        throw new Error("Predicate unavailable");
+      },
+    });
+    expect((await service.list({ inbox: true, completed: "exclude" })).tasks).toMatchObject([
+      { id: "open", completed: false },
+    ]);
+    expect(done.name).not.toHaveBeenCalled();
+    expect(open.completed).toHaveBeenCalledTimes(1);
+  });
+
   it("skips completed serializers, reuses local state and preserves every survivor field", async () => {
     const done = task("done", true);
     const survivor = task("survivor", false);
@@ -70,7 +102,9 @@ describe("Inbox completion prefilter through service and JXA transport", () => {
     "any",
     "only",
   ] as const)("preserves completion policy %s", async (completed) => {
-    const { service, spawner } = harness([task("done", true), task("open", false)]);
+    const { service, spawner, app } = harness([task("done", true), task("open", false)]);
+    const whose = vi.fn();
+    Object.assign(app.defaultDocument.inboxTasks, { whose });
     const result = await service.list({
       inbox: true,
       ...(completed !== undefined ? { completed } : {}),
@@ -78,6 +112,7 @@ describe("Inbox completion prefilter through service and JXA transport", () => {
     expect(result.tasks.map((t) => t.id)).toEqual(
       completed === "only" ? ["done"] : ["done", "open"],
     );
+    expect(whose).not.toHaveBeenCalled();
     expect(JSON.parse(vi.mocked(spawner).mock.calls[0]?.[1] ?? "{}")).toMatchObject({
       inbox: true,
       completed: completed === "only" ? true : null,
