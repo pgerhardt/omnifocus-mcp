@@ -128,7 +128,18 @@ function run(argv) {
   const result = [];
   for (let i = 0; i < tasks.length; i++) {
     const t = tasks[i];
-    const built = buildTask(t);
+    let completed;
+    if (args.inbox && args.completed === false) {
+      // Match buildTask's local completion state and false-on-read-error default.
+      completed = false;
+      try {
+        completed = t.completed();
+      } catch (_e) {
+        /* Preserve the existing serializer default. */
+      }
+      if (completed !== false) continue;
+    }
+    const built = buildTask(t, { completed });
 
     if (args.tagId !== null && args.tagId !== undefined) {
       if (!built.tagIds.includes(args.tagId)) continue;

@@ -232,6 +232,7 @@ export class JxaTransport implements OmniFocusAdapter {
     const result = await runJxaScript<{ tasks: Task[] }>(
       taskListScript,
       {
+        inbox: filter.inbox ?? false,
         projectId: filter.projectId ?? null,
         tagId: filter.tagId ?? null,
         parentId: filter.parentId ?? null,

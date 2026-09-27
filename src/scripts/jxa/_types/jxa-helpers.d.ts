@@ -44,7 +44,7 @@
  * @see src/scripts/jxa/_helpers/build_task.js
  */
 // biome-ignore lint/suspicious/noExplicitAny: helper return is the projected domain shape — see file header.
-declare function buildTask(task: unknown, options?: { effectiveAvailability?: boolean }): any;
+declare function buildTask(task: unknown, options?: { effectiveAvailability?: boolean; completed?: boolean }): any;
 
 /**
  * Build the repetition sub-object of a Task (rrule + anchor +

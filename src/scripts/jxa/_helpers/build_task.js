@@ -23,6 +23,7 @@
  * @param {object} task — JXA Task specifier
  * @param {object} [options]
  * @param {boolean} [options.effectiveAvailability=false] — retained for compatibility; availability is always derived from effective JXA state.
+ * @param {boolean} [options.completed] — local completion state already read by the caller.
  * @returns {object} canonical Task shape per `src/domain/task.ts`
  */
 // biome-ignore lint/correctness/noUnusedVariables: inlined into JXA consumers via @inline directive (ADR-0020).
@@ -149,9 +150,9 @@ function buildTask(task, options) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
 
-  let completed = false;
+  let completed = options.completed ?? false;
   try {
-    completed = task.completed();
+    if (options.completed === undefined) completed = task.completed();
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
