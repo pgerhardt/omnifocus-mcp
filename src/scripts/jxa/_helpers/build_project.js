@@ -26,6 +26,19 @@
  */
 // biome-ignore lint/correctness/noUnusedVariables: inlined into JXA consumers via @inline directive (ADR-0020).
 function buildProject(proj) {
+  let properties = null;
+  try {
+    properties = proj.properties();
+  } catch (_e) {
+    /* Fall back to individual getters when the native record is unavailable. */
+  }
+  function readScalar(key) {
+    // biome-ignore lint/suspicious/noPrototypeBuiltins: preserve compatibility with older JXA JavaScriptCore runtimes.
+    return properties != null && Object.prototype.hasOwnProperty.call(properties, key)
+      ? properties[key]
+      : proj[key]();
+  }
+
   // OmniFocus 4.x JXA quirk (same flavor as #673's containingProject):
   // `f.class()` throws "Can't convert types" on a real Folder specifier.
   // Treat the throw as "real folder", a successful return of "document"
@@ -65,7 +78,7 @@ function buildProject(proj) {
 
   let rawStatus = "active";
   try {
-    rawStatus = proj.status();
+    rawStatus = readScalar("status");
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
@@ -73,7 +86,7 @@ function buildProject(proj) {
 
   let deferDate = null;
   try {
-    const dd = proj.deferDate();
+    const dd = readScalar("deferDate");
     if (dd) deferDate = dd.toISOString();
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
@@ -81,7 +94,7 @@ function buildProject(proj) {
 
   let dueDate = null;
   try {
-    const due = proj.dueDate();
+    const due = readScalar("dueDate");
     if (due) dueDate = due.toISOString();
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
@@ -89,14 +102,14 @@ function buildProject(proj) {
 
   let floating = false;
   try {
-    floating = proj.shouldUseFloatingTimeZone();
+    floating = readScalar("shouldUseFloatingTimeZone");
   } catch (_e) {
     /* Preserve the default when native state is unavailable. */
   }
 
   let completedAt = null;
   try {
-    const cd = proj.completionDate();
+    const cd = readScalar("completionDate");
     if (cd) completedAt = cd.toISOString();
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
@@ -104,7 +117,7 @@ function buildProject(proj) {
 
   let droppedAt = null;
   try {
-    const date = proj.droppedDate();
+    const date = readScalar("droppedDate");
     if (date) droppedAt = date.toISOString();
   } catch (_e) {
     /* Leave unknown drop dates null. */
@@ -112,7 +125,7 @@ function buildProject(proj) {
 
   let estimatedMinutes = null;
   try {
-    const em = proj.estimatedMinutes();
+    const em = readScalar("estimatedMinutes");
     if (em != null) estimatedMinutes = em;
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
@@ -120,7 +133,7 @@ function buildProject(proj) {
 
   let note = null;
   try {
-    note = proj.note() || null;
+    note = readScalar("note") || null;
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
@@ -130,7 +143,7 @@ function buildProject(proj) {
 
   let flagged = false;
   try {
-    flagged = proj.flagged();
+    flagged = readScalar("flagged");
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
@@ -144,7 +157,7 @@ function buildProject(proj) {
     // exist on OF 4.8.x ("Can't convert types"), so convert the record by
     // unit. Month/year are calendar-approximate; minute/hour can't be set
     // as review cadences in the OF UI and stay null.
-    const ri = proj.reviewInterval();
+    const ri = readScalar("reviewInterval");
     if (ri && typeof ri.steps === "number" && ri.steps > 0) {
       const unitDays = { day: 1, week: 7, month: 30, year: 365 }[ri.unit];
       if (unitDays) reviewIntervalDays = ri.steps * unitDays;
@@ -155,7 +168,7 @@ function buildProject(proj) {
 
   let nextReviewDate = null;
   try {
-    const nrd = proj.nextReviewDate();
+    const nrd = readScalar("nextReviewDate");
     if (nrd) nextReviewDate = nrd.toISOString();
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
@@ -163,7 +176,7 @@ function buildProject(proj) {
 
   let lastReviewDate = null;
   try {
-    const lrd = proj.lastReviewDate ? proj.lastReviewDate() : null;
+    const lrd = readScalar("lastReviewDate");
     if (lrd) lastReviewDate = lrd.toISOString();
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
@@ -184,8 +197,8 @@ function buildProject(proj) {
   }
 
   let completionCriterion = "parallel";
-  if (proj.singletonActionHolder()) completionCriterion = "singleActions";
-  else if (proj.sequential()) completionCriterion = "sequential";
+  if (readScalar("singletonActionHolder")) completionCriterion = "singleActions";
+  else if (readScalar("sequential")) completionCriterion = "sequential";
 
   // Guard against "Can't get object." thrown when invoking these — see #498.
   // JXA reports creationDate/modificationDate as truthy functions even on
@@ -193,21 +206,21 @@ function buildProject(proj) {
   // property reference.
   let createdAt;
   try {
-    createdAt = proj.creationDate().toISOString();
+    createdAt = readScalar("creationDate").toISOString();
   } catch (_e) {
     createdAt = new Date().toISOString();
   }
 
   let modifiedAt;
   try {
-    modifiedAt = proj.modificationDate().toISOString();
+    modifiedAt = readScalar("modificationDate").toISOString();
   } catch (_e) {
     modifiedAt = new Date().toISOString();
   }
 
   return {
     id: proj.id(),
-    name: proj.name(),
+    name: readScalar("name"),
     note: note,
     noteHtml: null,
     folderId: folderId,
