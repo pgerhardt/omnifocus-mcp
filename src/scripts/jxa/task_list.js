@@ -50,9 +50,19 @@ function run(argv) {
   const deferredAfter = args.deferredAfter ? new Date(args.deferredAfter) : null;
 
   let tasks;
+  let inboxCompletionSelected = false;
   if (args.inbox) {
-    // inboxTasks() returns only tasks with no project assignment — exactly the Inbox scope.
-    tasks = ofApp.defaultDocument.inboxTasks();
+    if (args.completed === false) {
+      try {
+        // Filter the same Inbox roots by local completion, retaining native order.
+        tasks = ofApp.defaultDocument.inboxTasks.whose({ completed: false })();
+        inboxCompletionSelected = true;
+      } catch (_e) {
+        tasks = ofApp.defaultDocument.inboxTasks();
+      }
+    } else {
+      tasks = ofApp.defaultDocument.inboxTasks();
+    }
   } else if (args.projectId) {
     const proj = lookupOrThrow(
       ofApp.defaultDocument.flattenedProjects.byId(args.projectId),
@@ -128,8 +138,8 @@ function run(argv) {
   const result = [];
   for (let i = 0; i < tasks.length; i++) {
     const t = tasks[i];
-    let completed;
-    if (args.inbox && args.completed === false) {
+    let completed = inboxCompletionSelected ? false : undefined;
+    if (args.inbox && args.completed === false && !inboxCompletionSelected) {
       // Match buildTask's local completion state and false-on-read-error default.
       completed = false;
       try {
