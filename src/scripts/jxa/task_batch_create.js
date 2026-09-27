@@ -83,11 +83,7 @@ function run(argv) {
       }
 
       if (input.completedByChildren != null) {
-        try {
-          newTask.containsSingletonActions = input.completedByChildren;
-        } catch (_e) {
-          /* OF 4.x: property access may not exist on all object types — default used */
-        }
+        newTask.completedByChildren = input.completedByChildren;
       }
 
       succeeded.push({ index: i, value: newTask.id() });

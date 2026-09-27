@@ -56,7 +56,7 @@ function run(argv) {
     }
     if (patch.sequential != null) task.sequential = patch.sequential;
     if (patch.completedByChildren != null) {
-      task.containsSingletonActions = patch.completedByChildren;
+      task.completedByChildren = patch.completedByChildren;
     }
     if (patch.tagIds) {
       // OmniFocus 4.x: JXA tag mutation silently no-ops on existing tasks
