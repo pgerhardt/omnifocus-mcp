@@ -37,15 +37,15 @@ describe("project scalar property records", () => {
       sequential,
       creationDate: date,
       modificationDate: date,
+      numberOfTasks: 3,
+      numberOfCompletedTasks: 1,
     };
     const getters = Object.fromEntries(Object.keys(record).map((key) => [key, vi.fn()]));
-    const properties = vi.fn(() => ({ ...record, id: "wrong", numberOfTasks: 999 }));
+    const properties = vi.fn(() => ({ ...record, id: "project" }));
     const project = Object.assign(fakeProject({ id: () => "project" }), getters, {
       properties,
       folder: () => ({ class: () => "folder", id: () => "folder" }),
       tags: () => [{ id: () => "tag" }],
-      numberOfTasks: () => 3,
-      numberOfCompletedTasks: () => 1,
     });
     expect(readProject(project)).toEqual({
       id: "project",
@@ -89,6 +89,8 @@ describe("project scalar property records", () => {
       reviewInterval: null,
       singletonActionHolder: false,
       sequential: false,
+      numberOfTasks: 0,
+      numberOfCompletedTasks: 0,
     };
     const getters = Object.fromEntries(Object.keys(record).map((key) => [key, vi.fn(() => true)]));
     const project = Object.assign(fakeProject({ id: () => "project" }), getters, {
@@ -104,6 +106,8 @@ describe("project scalar property records", () => {
       dueDate: null,
       reviewIntervalDays: null,
       completionCriterion: "parallel",
+      taskCount: 0,
+      completedTaskCount: 0,
     });
     for (const getter of Object.values(getters)) expect(getter).not.toHaveBeenCalled();
   });
