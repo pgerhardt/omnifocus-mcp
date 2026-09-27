@@ -53,11 +53,11 @@ function buildTag(tag, docId) {
     const loc = tag.location();
     if (loc) {
       location = {
-        name: loc.locationName ? loc.locationName() : null,
-        latitude: loc.latitude(),
-        longitude: loc.longitude(),
-        radiusMeters: loc.radius ? loc.radius() : 0,
-        trigger: "both",
+        name: loc.name || null,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        radiusMeters: (loc.radius || 0) * 1000,
+        trigger: loc.trigger === "notify when leaving" ? "leaving" : "entering",
       };
     }
   } catch (_e) {
