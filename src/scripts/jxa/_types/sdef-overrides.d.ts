@@ -269,7 +269,7 @@ interface Folder {
 
 interface Application {
   /** Mark a specifier (project/task) dropped. JXA verb. */
-  markDropped(item: unknown): void;
+  markDropped(item: unknown, options?: { droppedDate: Date }): void;
   /** Mark a specifier incomplete — undoes markComplete. JXA verb. */
   markIncomplete(item: unknown): void;
 }

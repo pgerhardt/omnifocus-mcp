@@ -26,7 +26,8 @@ function run(argv) {
 
   // In OmniFocus 4.x JXA, `task.dropped = true` is rejected with -10003
   // ("Can't set that. Access not allowed."). Use ofApp.markDropped() instead.
-  ofApp.markDropped(found);
+  const options = args.droppedAt ? { droppedDate: new Date(args.droppedAt) } : undefined;
+  ofApp.markDropped(found, options);
 
   return JSON.stringify({ id: args.id });
 }
