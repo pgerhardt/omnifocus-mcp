@@ -4,7 +4,10 @@ import script from "../../scripts/jxa/perspective_evaluate.js";
 import { fakeTask } from "./sandbox/fixtures.js";
 
 it("reads Inbox from the default document without an application-level collection", () => {
-  const app = { defaultDocument: { inboxTasks: () => [fakeTask({ id: () => "inbox-task" })] } };
+  const app = {
+    evaluateJavascript: () => "[]",
+    defaultDocument: { inboxTasks: () => [fakeTask({ id: () => "inbox-task" })] },
+  };
   const output = runInNewContext(`${script}\nrun(['{"perspectiveId":"inbox"}'])`, {
     Application: () => app,
   });
