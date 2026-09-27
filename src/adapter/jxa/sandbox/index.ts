@@ -645,7 +645,7 @@ function makeConstructedProject(opts: ProjectConstructorOpts): Record<string, un
     flattenedTasks: () => tasksArr,
     creationDate: () => new Date(),
     modificationDate: () => new Date(),
-    completionCriterion: () => "parallel",
+    singletonActionHolder: () => false,
     sequential: () => false,
     numberOfTasks: () => 0,
     numberOfAvailableTasks: () => 0,

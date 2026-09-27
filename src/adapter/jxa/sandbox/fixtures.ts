@@ -273,7 +273,7 @@ export interface FakeProjectOverrides {
   estimatedMinutes?: () => number | null;
   numberOfTasks?: () => number;
   numberOfAvailableTasks?: () => number;
-  completionCriterion?: () => string;
+  singletonActionHolder?: () => boolean;
   sequential?: () => boolean;
   note?: () => string;
   // Runtime extra — note_get_html.js reads it, project_update.js assigns it.
@@ -323,7 +323,7 @@ export function fakeProject(
     flattenedTasks: overrides.flattenedTasks ?? fn([]),
     numberOfTasks: overrides.numberOfTasks ?? fn(0),
     numberOfAvailableTasks: overrides.numberOfAvailableTasks ?? fn(0),
-    completionCriterion: overrides.completionCriterion ?? fn("parallel"),
+    singletonActionHolder: overrides.singletonActionHolder ?? fn(false),
     sequential: overrides.sequential ?? fn(false),
     creationDate: overrides.creationDate ?? fn(now),
     modificationDate: overrides.modificationDate ?? fn(now),

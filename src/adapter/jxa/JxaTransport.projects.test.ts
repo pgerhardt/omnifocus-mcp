@@ -126,6 +126,28 @@ describe("JxaTransport — listProjects", () => {
 // ---------------------------------------------------------------------------
 
 describe("JxaTransport — getProject", () => {
+  it.each([
+    [false, false, "parallel"],
+    [false, true, "sequential"],
+    [true, false, "singleActions"],
+  ] as const)("serializes native type flags %s/%s as %s", async (singleton, sequential, expected) => {
+    const project = fakeProject({
+      id: () => "proj_aaa",
+      singletonActionHolder: () => singleton,
+      sequential: () => sequential,
+    });
+    const spawner: ScriptSpawner = async (script, jsonArg) => ({
+      stdout: JSON.stringify(
+        runJxaScriptInSandbox(script, JSON.parse(jsonArg), { projects: [project] }),
+      ),
+      stderr: "",
+      exitCode: 0,
+      timedOut: false,
+    });
+    const t = new JxaTransport({ spawner });
+    expect((await t.getProject("proj_aaa" as ProjectId)).completionCriterion).toBe(expected);
+  });
+
   it("returns a single project", async () => {
     const t = new JxaTransport({ spawner: spawnerReturning({ project: BASE_PROJECT }) });
     const project = await t.getProject("proj_aaa" as ProjectId);
