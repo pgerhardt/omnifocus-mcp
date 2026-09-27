@@ -17,12 +17,11 @@ import type { ReviewService } from "../../services/reviewService.js";
 
 export const REVIEW_SET_INTERVAL_DESCRIPTION =
   "Set a project's review interval in OmniFocus — updates how many days between reviews. " +
-  "Use null to remove the recurring schedule. " +
+  "Null is unsupported: OmniFocus cannot remove the recurring review schedule. " +
   "Do not use to mark a project as reviewed; prefer review_mark_reviewed for that. " +
-  "Returns { id, name, reviewIntervalDays } — name is the project's display name (post-mutation lookup; null if the project has been deleted), and reviewIntervalDays echoes back the new value (or null when cleared) so the agent can describe the change without a follow-up read. " +
+  "Returns { id, name, reviewIntervalDays } — name is the project's display name (post-mutation lookup; null if the project has been deleted), and reviewIntervalDays echoes back the new value so the agent can describe the change without a follow-up read. " +
   "Side effects: writes to OmniFocus; sets syncPending = true. " +
-  'Example: review_set_interval({ id: "prj123", days: 7 }) ' +
-  'Example: review_set_interval({ id: "prj123", days: null })';
+  'Example: review_set_interval({ id: "prj123", days: 7 })';
 
 // ---------------------------------------------------------------------------
 // Input schema
@@ -35,7 +34,7 @@ export const reviewSetIntervalInputSchema = z.object({
     .int()
     .min(1)
     .nullable()
-    .describe("Review interval in days. Pass null to remove the recurring review schedule."),
+    .describe("Positive review interval in days. Null returns an unsupported-operation error."),
 });
 
 export type ReviewSetIntervalToolInput = z.infer<typeof reviewSetIntervalInputSchema>;

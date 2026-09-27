@@ -30,7 +30,21 @@ function run(argv) {
     args.id,
   );
 
-  target.reviewIntervalDays = args.days;
+  if (args.days === null) {
+    throw new Error(
+      "OF_UNSUPPORTED: OmniFocus cannot clear review intervals; supply positive days",
+    );
+  }
+
+  const interval = /** @type {{ unit: string, steps: number, fixed: boolean }} */ (
+    target.reviewInterval()
+  );
+  // @ts-expect-error — sdef property setter; JXA accepts assignment, generator emits method signature only.
+  target.reviewInterval = { unit: "day", steps: args.days, fixed: interval.fixed };
+  const actual = /** @type {typeof interval} */ (target.reviewInterval());
+  if (actual?.unit !== "day" || actual.steps !== args.days || actual.fixed !== interval.fixed) {
+    throw new Error("OF_UNSUPPORTED: requested review interval was not applied");
+  }
 
   return JSON.stringify({ id: args.id });
 }

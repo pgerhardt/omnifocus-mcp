@@ -2750,14 +2750,14 @@ Mark a project as reviewed in OmniFocus — sets lastReviewDate to now and advan
 
 ## review_set_interval
 
-Set a project's review interval in OmniFocus — updates how many days between reviews. Use null to remove the recurring schedule. Do not use to mark a project as reviewed; prefer review_mark_reviewed for that. Returns { id, name, reviewIntervalDays } — name is the project's display name (post-mutation lookup; null if the project has been deleted), and reviewIntervalDays echoes back the new value (or null when cleared) so the agent can describe the change without a follow-up read. Side effects: writes to OmniFocus; sets syncPending = true. Example: review_set_interval({ id: "prj123", days: 7 }) Example: review_set_interval({ id: "prj123", days: null })
+Set a project's review interval in OmniFocus — updates how many days between reviews. Null is unsupported: OmniFocus cannot remove the recurring review schedule. Do not use to mark a project as reviewed; prefer review_mark_reviewed for that. Returns { id, name, reviewIntervalDays } — name is the project's display name (post-mutation lookup; null if the project has been deleted), and reviewIntervalDays echoes back the new value so the agent can describe the change without a follow-up read. Side effects: writes to OmniFocus; sets syncPending = true. Example: review_set_interval({ id: "prj123", days: 7 })
 
 ### Input
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `id` | string | Yes | Persistent ID of the project to update. |
-| `days` | number | null | Yes | Review interval in days. Pass null to remove the recurring review schedule. |
+| `days` | number | null | Yes | Positive review interval in days. Null returns an unsupported-operation error. |
 
 ### Example call
 
