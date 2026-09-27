@@ -78,7 +78,7 @@ function run(argv) {
 
     if (perspectiveId === "inbox") {
       // Inbox: tasks not yet assigned to a project
-      const inboxTasks = ofApp.inboxTasks();
+      const inboxTasks = ofApp.defaultDocument.inboxTasks();
       for (let i = 0; i < inboxTasks.length; i++) {
         result.push(buildTask(inboxTasks[i]));
       }
