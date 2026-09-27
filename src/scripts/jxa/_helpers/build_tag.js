@@ -64,20 +64,14 @@ function buildTag(tag, docId) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
 
-  let rawStatus = "active";
-  try {
-    rawStatus = tag.status();
-  } catch (_e) {
-    /* OF 4.x: property access may not exist on all object types — default used */
-  }
-  const status = rawStatus === "on hold" ? "on-hold" : rawStatus;
-
   let allowsNextAction = false;
   try {
     allowsNextAction = tag.allowsNextAction();
   } catch (_e) {
     /* OF 4.x: property access may not exist on all object types — default used */
   }
+
+  const status = tag.hidden() ? "dropped" : allowsNextAction ? "active" : "on-hold";
 
   let taskCount = 0;
   try {
